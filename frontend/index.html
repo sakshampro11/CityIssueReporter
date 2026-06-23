@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lokally – Dashboard</title>
+  <meta name="description" content="Browse and report community issues in your neighbourhood." />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body,
+    html {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .font-space-grotesk {
+      font-family: 'Space Grotesk', sans-serif !important;
+    }
+
+    /* Custom scrollbar for modern cards & overlays */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+
+    /* ── Share tooltip ── */
+    .tooltip-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .button-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      color: #475569;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 10;
+      border: 1px solid #f1f5f9;
+    }
+
+    .button-content:hover {
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #dbeafe;
+      transform: translateY(-1px);
+    }
+
+    .text {
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    .share-icon {
+      fill: currentColor;
+      width: 13px;
+      height: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .tooltip-content {
+      position: absolute;
+      bottom: 115%;
+      left: 50%;
+      transform: translateX(-50%) scale(0.95);
+      background: rgba(255, 255, 255, 0.98) !important;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.2s ease;
+      z-index: 100;
+      pointer-events: none;
+      border: 1px solid #f1f5f9;
+    }
+
+    .tooltip-container:hover .tooltip-content {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) scale(1);
+      pointer-events: auto;
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .social-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f8fafc !important;
+      transition: all 0.2s ease;
+      border: 1px solid #f1f5f9;
+    }
+
+    .social-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: #475569 !important;
+      transition: all 0.2s ease;
+    }
+
+    .social-icon:hover {
+      transform: translateY(-2px);
+      background: #eff6ff !important;
+      border-color: #dbeafe;
+    }
+
+    .social-icon:hover svg {
+      fill: #2563eb !important;
+    }
+
+    /* ── Modals & Overlay Blurs ── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 24px;
+      padding: 2.25rem 2.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      min-width: 340px;
+      text-align: center;
+      border: 1px solid #f1f5f9;
+    }
+
+    .modal-box h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .modal-btn {
+      padding: 0.625rem 1.75rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn.yes {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.12), 0 2px 4px -1px rgba(37, 99, 235, 0.08);
+    }
+
+    .modal-btn.yes:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .modal-btn.no {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    .modal-btn.no:hover {
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+
+    /* ── Media upload drop zone ── */
+    .upload-zone {
+      border: 2px dashed #e2e8f0;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #f8fafc;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .upload-zone input[type=file] {
+      display: none;
+    }
+
+    .upload-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .upload-preview-item {
+      position: relative;
+      width: 80px;
+      height: 60px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .upload-preview-item img,
+    .upload-preview-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .upload-preview-item .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(15, 23, 42, 0.7);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .upload-preview-item .remove-btn:hover {
+      background: rgba(239, 68, 68, 0.9);
+    }
+
+    /* ── Issue detail modal ── */
+    #issueDetailModal .detail-media img,
+    #issueDetailModal .detail-media video {
+      max-width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .detail-media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <nav class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100/80 px-6 sm:px-16 py-4 flex items-center justify-between transition-all duration-300 shadow-sm shadow-slate-100/25">
+    <div class="flex items-center">
+      <a href="landing.html" class="text-3xl font-extrabold tracking-tight text-blue-600 font-space-grotesk flex items-center gap-1.5 hover:opacity-95 transition-opacity">
+        <span>Lokally</span><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+      </a>
+    </div>
+    <div class="flex items-center gap-4 text-slate-600">
+      <!-- Map View link -->
+      <a href="map-view.html"
+        class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-100"
+        title="View all issues on map">
+        <span class="material-symbols-outlined text-[18px]">map</span>
+        <span>Map View</span>
+      </a>
+      <!-- Profile -->
+      <div class="relative">
+        <button id="profileBtn"
+          class="hover:bg-slate-50 hover:text-blue-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[22px]">person</span>
+        </button>
+        <div id="profilePopup"
+          class="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50 p-5 text-sm text-slate-700">
+          <div class="font-bold text-lg mb-1 text-slate-900" id="headerProfileName">Community Member</div>
+          <div class="text-slate-400 mb-3 text-xs" id="headerProfileEmail">No email</div>
+          <hr class="my-3 border-slate-100" />
+          <div class="mb-2 flex items-center gap-2"><span class="material-symbols-outlined text-slate-400 text-sm">phone</span><span id="headerProfilePhone">—</span></div>
+          <div class="flex items-start gap-2"><span class="material-symbols-outlined text-slate-400 text-sm mt-0.5">location_on</span><span id="headerProfileAddress" class="leading-relaxed">—</span></div>
+        </div>
+      </div>
+      <!-- Notifications -->
+      <div class="relative">
+        <button id="notificationsBtn"
+          class="hover:bg-slate-50 hover:text-blue-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center relative">
+          <span class="material-symbols-outlined text-[22px]">notifications</span>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
+        <div id="notificationsPopup"
+          class="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50">
+          <div class="py-1">
+            <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+              <h3 class="text-sm font-bold text-slate-900">Notifications</h3>
+              <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">2 New</span>
+            </div>
+            <div class="max-h-96 overflow-y-auto divide-y divide-slate-50">
+              <a href="#" class="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50/50 transition">
+                <span class="material-symbols-outlined text-blue-500 text-lg mt-0.5 bg-blue-50 p-1 rounded-lg">update</span>
+                <div class="flex-1">
+                  <p class="font-semibold text-slate-700 text-xs">Status updated on issue</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">2 minutes ago</p>
+                </div>
+              </a>
+              <a href="#" class="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50/50 transition">
+                <span class="material-symbols-outlined text-amber-500 text-lg mt-0.5 bg-amber-50 p-1 rounded-lg">arrow_upward</span>
+                <div class="flex-1">
+                  <p class="font-semibold text-slate-700 text-xs">Your issue got 359 upvotes</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">5 minutes ago</p>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Settings -->
+      <div class="relative">
+        <button id="settingsBtn"
+          class="hover:bg-slate-50 hover:text-blue-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[22px]">settings</span>
+        </button>
+        <div id="settingsPopup"
+          class="absolute right-0 mt-2 w-60 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50 py-2">
+          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+            <span class="material-symbols-outlined text-slate-400 text-lg">person</span><span>Profile Settings</span>
+          </a>
+          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+            <span class="material-symbols-outlined text-slate-400 text-lg">security</span><span>Security &amp; Login</span>
+          </a>
+          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+            <span class="material-symbols-outlined text-slate-400 text-lg">privacy_tip</span><span>Privacy Controls</span>
+          </a>
+          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
+            <span class="material-symbols-outlined text-slate-400 text-lg">help</span><span>Feedback &amp; Help</span>
+          </a>
+        </div>
+      </div>
+      <!-- Logout -->
+      <button id="logoutBtn"
+        class="hover:bg-slate-50 hover:text-red-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center">
+        <span class="material-symbols-outlined text-[22px]">logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ────────────────────────────────────────────────────── -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 px-6 sm:px-16 mt-12 mb-16 relative z-10">
+    <!-- Issues Feed -->
+    <div class="lg:col-span-8 bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm shadow-slate-100/50">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight font-space-grotesk">Community Feed</h2>
+        <div class="flex gap-3">
+          <div class="relative">
+            <select id="urgencyFilter"
+              class="appearance-none bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-10 py-2.5 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all cursor-pointer">
+              <option value="all">All Urgency</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Daily">Daily</option>
+              <option value="Long-Term">Long-Term</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-3 top-2.5 pointer-events-none text-lg">unfold_more</span>
+          </div>
+          <div class="relative">
+            <select id="typeFilter"
+              class="appearance-none bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-10 py-2.5 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all cursor-pointer">
+              <option value="all">All Categories</option>
+              <option value="Water">Water Supply</option>
+              <option value="Road">Road Condition</option>
+              <option value="Electric">Electricity</option>
+              <option value="Sanitation">Sanitation</option>
+              <option value="Other">Other</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-3 top-2.5 pointer-events-none text-lg">unfold_more</span>
+          </div>
+        </div>
+      </div>
+      <div id="issuesList" class="space-y-6">
+        <!-- Issues rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-4 flex flex-col gap-6">
+      <!-- Profile Card -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col items-start hover:shadow-md transition-all duration-300">
+        <div class="w-full h-24 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+        <img id="profileAvatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="profile"
+          class="w-20 h-20 rounded-2xl border-4 border-white shadow-md -mt-10 ml-6 object-cover" />
+        <div class="text-left w-full px-6 pb-6 pt-3">
+          <div id="profileName" class="font-extrabold text-xl text-slate-900 mb-1 leading-snug">Community Member</div>
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-2">Verified Citizen</span>
+          <div id="profileEmail" class="text-slate-400 text-xs font-medium"></div>
+        </div>
+      </div>
+
+      <!-- Your Issues -->
+      <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all duration-300 relative" id="yourIssuesCard">
+        <button id="openIssuesSidebar"
+          class="font-extrabold text-lg mb-4 text-left w-full text-slate-900 hover:text-blue-600 transition-colors duration-200 cursor-pointer focus:outline-none flex items-center justify-between">
+          <span>Your Reports</span>
+          <span class="material-symbols-outlined text-slate-400 text-lg">arrow_forward</span>
+        </button>
+        <div id="yourIssuesPreview" class="space-y-2"></div>
+      </div>
+
+      <!-- Issues Sidebar Popup (Drawer style) -->
+      <div id="issuesPopupOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden transition-all duration-300"></div>
+      <div id="issuesPopup" class="fixed inset-y-0 right-0 z-50 flex items-center pointer-events-none pr-0">
+        <div
+          class="w-[28rem] h-screen bg-white shadow-2xl flex flex-col transform translate-x-full opacity-0 transition-all duration-300 pointer-events-auto border-l border-slate-100"
+          id="issuesPopupPanel">
+          <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+            <span class="font-extrabold text-xl text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-600">assignment_turned_in</span>
+              Your Reports
+            </span>
+            <button id="closeIssuesPopup" class="text-slate-400 hover:text-slate-600 transition flex items-center justify-center p-1 rounded-lg hover:bg-slate-50">
+              <span class="material-symbols-outlined text-2xl">close</span>
+            </button>
+          </div>
+          <div class="p-6 flex-1 overflow-auto space-y-4" id="yourIssuesFullList">
+          </div>
+        </div>
+      </div>
+
+      <!-- Urgent Issues -->
+      <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all duration-300 relative" id="urgentIssuesCard">
+        <button id="openUrgentIssuesPopup"
+          class="font-extrabold text-lg mb-4 text-left w-full text-slate-900 hover:text-red-500 transition-colors duration-200 cursor-pointer focus:outline-none flex items-center justify-between">
+          <span>Urgent Concerns</span>
+          <span class="material-symbols-outlined text-slate-400 text-lg">arrow_forward</span>
+        </button>
+        <div id="urgentIssuesPreview" class="space-y-2"></div>
+      </div>
+
+      <!-- Urgent Issues Popup -->
+      <div id="urgentIssuesPopupOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden transition-all duration-300"></div>
+      <div id="urgentIssuesPopup" class="fixed inset-y-0 right-0 z-50 flex items-center pointer-events-none pr-0">
+        <div
+          class="w-[28rem] h-screen bg-white shadow-2xl flex flex-col transform translate-x-full opacity-0 transition-all duration-300 pointer-events-auto border-l border-slate-100"
+          id="urgentIssuesPopupPanel">
+          <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+            <span class="font-extrabold text-xl text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-red-500 animate-pulse">local_fire_department</span>
+              Urgent Concerns
+            </span>
+            <button id="closeUrgentIssuesPopup" class="text-slate-400 hover:text-slate-600 transition flex items-center justify-center p-1 rounded-lg hover:bg-slate-50">
+              <span class="material-symbols-outlined text-2xl">close</span>
+            </button>
+          </div>
+          <div class="p-6 flex-1 overflow-auto space-y-4" id="urgentIssuesFullList">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Issue Detail Modal ────────────────────────────────────────────── -->
+  <div id="issueDetailModal"
+    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-8 relative">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight font-space-grotesk" id="detailTitle">Issue Detail</h2>
+        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition">
+          <span class="material-symbols-outlined text-2xl">close</span>
+        </button>
+      </div>
+      <div class="space-y-6">
+        <div class="flex gap-2 flex-wrap" id="detailStatus"></div>
+        <p class="text-slate-600 leading-relaxed font-medium" id="detailDescription"></p>
+        <div class="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+          <div><span class="text-slate-400 uppercase tracking-wider block mb-1">Type</span><span class="text-slate-800 text-sm font-bold" id="detailType"></span></div>
+          <div><span class="text-slate-400 uppercase tracking-wider block mb-1">Priority</span><span class="text-slate-800 text-sm font-bold" id="detailPriority"></span></div>
+          <div><span class="text-slate-400 uppercase tracking-wider block mb-1">Reporter</span><span class="text-slate-800 text-sm font-bold" id="detailReporter"></span></div>
+          <div><span class="text-slate-400 uppercase tracking-wider block mb-1">Location</span><span class="text-slate-800 text-sm font-bold" id="detailAddress"></span></div>
+        </div>
+        <!-- Media section -->
+        <div id="detailMediaSection" class="hidden">
+          <h3 class="font-extrabold text-slate-800 mb-3 text-sm uppercase tracking-wider">Attached Media</h3>
+          <div class="detail-media-grid detail-media" id="detailMediaGrid"></div>
+        </div>
+        <!-- Status Timeline section -->
+        <div id="detailTimelineSection" class="pt-4 border-t border-slate-100">
+          <h3 class="font-extrabold text-slate-800 mb-3 text-sm uppercase tracking-wider">Status Timeline</h3>
+          <div class="relative pl-6 border-l-2 border-slate-100 space-y-6 ml-2" id="detailTimeline"></div>
+        </div>
+        <!-- Comments Section -->
+        <div id="detailCommentsSection" class="pt-4 border-t border-slate-100">
+          <h3 class="font-extrabold text-slate-800 mb-3 text-sm uppercase tracking-wider" id="detailCommentsTitle">Comments (0)</h3>
+          <div class="space-y-3 max-h-48 overflow-y-auto pr-2 mb-4" id="detailCommentsList"></div>
+          <div id="detailCommentFormContainer"></div>
+        </div>
+        <!-- Actions / Verification section -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100" id="detailActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Floating NEW ISSUE button ──────────────────────────────────────── -->
+  <button id="openNewIssue" class="fixed bottom-8 right-8 z-40 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold px-6 py-4 rounded-full shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-300 flex items-center gap-2 group">
+    <span class="material-symbols-outlined text-2xl transition-transform group-hover:rotate-90 duration-300">add</span>
+    <span class="tracking-wide">Report Issue</span>
+  </button>
+
+  <!-- ── Logout Modal ────────────────────────────────────────────────────── -->
+  <div id="logoutModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>Are you sure you want to log out?</h2>
+      <div class="modal-actions">
+        <button class="modal-btn yes" id="confirmLogout">Yes</button>
+        <button class="modal-btn no" id="cancelLogout">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── New Issue Modal ─────────────────────────────────────────────────── -->
+  <div id="newIssueModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight font-space-grotesk">Report a New Issue</h2>
+        <button onclick="closeNewIssueModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition">
+          <span class="material-symbols-outlined text-2xl">close</span>
+        </button>
+      </div>
+
+      <form id="issueForm" class="space-y-8">
+        <!-- Personal Info -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Your Information</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="name" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Full Name</label>
+              <input type="text" id="name" name="name"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50"
+                required />
+            </div>
+            <div>
+              <label for="email" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Email</label>
+              <input type="email" id="email" name="email"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50"
+                required />
+            </div>
+            <div>
+              <label for="phone" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Phone Number</label>
+              <input type="tel" id="phone" name="phone"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50"
+                required />
+            </div>
+            <div>
+              <label for="address" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Address / Area</label>
+              <input type="text" id="address" name="address"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50"
+                placeholder="e.g. MG Road, Sector 4" required />
+              <!-- Hidden geolocation fields -->
+              <input type="hidden" id="geoLat" name="lat" />
+              <input type="hidden" id="geoLng" name="lng" />
+              <!-- Geo status pill -->
+              <div id="geoStatus" class="mt-2 hidden flex items-center gap-1.5 text-[11px] font-semibold">
+                <span class="material-symbols-outlined text-sm" id="geoStatusIcon">location_on</span>
+                <span id="geoStatusText"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issue Details -->
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Issue Details</h3>
+            <button type="button" id="aiAnalyzeBtn"
+              class="text-xs bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-xl font-bold transition duration-200 shadow-sm flex items-center gap-1.5 hover:-translate-y-0.5 active:translate-y-0">
+              <span class="material-symbols-outlined text-sm">auto_awesome</span>
+              Auto-fill with AI
+            </button>
+          </div>
+
+          <div>
+            <label for="description" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Description</label>
+            <textarea id="description" name="description" rows="4" required placeholder="Describe the issue in detail..."
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50 resize-none"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="title" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Title</label>
+              <input type="text" id="title" name="title" required placeholder="e.g. Broken Water Pipe"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50" />
+            </div>
+            <div>
+              <label for="summary" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Summary</label>
+              <input type="text" id="summary" name="summary" required placeholder="e.g. Water leak causing road flooding"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800 bg-slate-50/50" />
+            </div>
+          </div>
+
+          <div>
+            <label for="issueType" class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Issue Type</label>
+            <div class="relative">
+              <select id="issueType" name="issueType" required
+                class="w-full appearance-none px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-700 bg-slate-50/50 cursor-pointer">
+                <option value="">Select a type</option>
+                <option value="Water">Water Supply</option>
+                <option value="Electric">Electricity</option>
+                <option value="Road">Road Condition</option>
+                <option value="Sanitation">Sanitation / Garbage</option>
+                <option value="Pothole">Pothole</option>
+                <option value="Streetlight">Streetlight</option>
+                <option value="Waste">Waste</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="material-symbols-outlined text-slate-400 absolute right-4 top-3 pointer-events-none text-lg">unfold_more</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Priority</h3>
+          <div class="flex gap-4">
+            <label class="flex items-center space-x-2.5 cursor-pointer group">
+              <input type="radio" name="priority" value="Low" required class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300" />
+              <span class="text-sm font-semibold text-slate-600 group-hover:text-slate-800 transition">Low</span>
+            </label>
+            <label class="flex items-center space-x-2.5 cursor-pointer group">
+              <input type="radio" name="priority" value="Medium" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300" />
+              <span class="text-sm font-semibold text-slate-600 group-hover:text-slate-800 transition">Medium</span>
+            </label>
+            <label class="flex items-center space-x-2.5 cursor-pointer group">
+              <input type="radio" name="priority" value="High" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300" />
+              <span class="text-sm font-semibold text-slate-600 group-hover:text-slate-800 transition">High</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Media Upload -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Photos / Videos <span
+              class="text-xs font-normal text-slate-400 lowercase italic">(optional, up to 5)</span></h3>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('mediaInput').click()">
+            <input type="file" id="mediaInput" name="media" multiple accept="image/*,video/*" />
+            <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">upload_file</span>
+            <p class="text-slate-600 text-sm font-bold">Click to browse or drag &amp; drop here</p>
+            <p class="text-slate-400 text-xs mt-1">JPEG, PNG, WEBP, GIF, MP4, MOV, WEBM &bull; max 50 MB each</p>
+          </div>
+          <div class="upload-preview" id="uploadPreview"></div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeNewIssueModal()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition">Cancel</button>
+          <button type="submit"
+            class="px-6 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-600/10">
+            Submit Issue
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ── Issues State & Fetching ──────────────────────────────────────────
+    let allIssues = [];
+    // Geolocation captured coords (set when the modal opens)
+    let capturedLat = null;
+    let capturedLng = null;
+
+    async function fetchIssues() {
+      try {
+        const token = localStorage.getItem('ch_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/issues', { headers });
+        if (res.ok) {
+          allIssues = await res.json();
+        } else {
+          console.error('Failed to fetch issues', await res.text());
+        }
+      } catch (err) {
+        console.error('Error fetching issues:', err);
+      }
+      renderIssues(document.getElementById('urgencyFilter').value, document.getElementById('typeFilter').value);
+      renderSidebars();
+    }
+
+    function formatTimeAgo(dateString) {
+      if (!dateString) return '';
+      const diff = Date.now() - new Date(dateString).getTime();
+      const hrs = Math.floor(diff / (1000 * 60 * 60));
+      if (hrs < 24) return hrs === 0 ? 'Just now' : `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function getStatusHtml(issue) {
+      const statuses = [issue.status || "Reported"];
+      if (issue.priority) statuses.push(`${issue.priority} Priority`);
+
+      return statuses.map(s => {
+        const cls = (s.includes("High") || s === "Urgent")
+          ? "bg-rose-50 text-rose-600 border-rose-100"
+          : (s === "Pending" || s === "Reported")
+            ? "bg-amber-50 text-amber-600 border-amber-100"
+            : s === "In Progress"
+              ? "bg-blue-50 text-blue-600 border-blue-100"
+              : s.includes("Low")
+                ? "bg-slate-50 text-slate-500 border-slate-100"
+                : (s === "Resolved" || s === "Verified")
+                  ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  : s.includes("Medium")
+                    ? "bg-amber-50 text-amber-600 border-amber-100"
+                    : "bg-slate-50 text-slate-500 border-slate-100";
+
+        let iconHtml = '';
+        if (s === "Verified") {
+          iconHtml = '<span class="material-symbols-outlined text-[14px] leading-none">verified</span>';
+        } else if (s === "Resolved") {
+          iconHtml = '<span class="material-symbols-outlined text-[14px] leading-none">check_circle</span>';
+        }
+
+        return `<span class="px-3 py-1 rounded-full text-xs font-bold border ${cls} inline-flex items-center gap-1">${iconHtml}${s}</span>`;
+      }).join(' ');
+    }
+
+    // ── Render issues ──────────────────────────────────────────────────────
+    function renderIssues(filterUrgency = 'all', filterType = 'all') {
+      const list = document.getElementById('issuesList');
+      list.innerHTML = '';
+
+      let currentUser = {};
+      try {
+        currentUser = JSON.parse(localStorage.getItem('ch_user') || '{}');
+      } catch (e) { }
+      const currentUserId = currentUser.id || '';
+
+      let filtered = allIssues;
+      if (filterUrgency !== 'all') {
+        const pMap = { "Urgent": "High", "Daily": "Medium", "Long-Term": "Low" };
+        const pMatch = pMap[filterUrgency] || filterUrgency;
+        filtered = filtered.filter(c => c.priority === pMatch || (c.status && c.status.includes(filterUrgency)));
+      }
+      if (filterType !== 'all') {
+        filtered = filtered.filter(c => c.issueType === filterType);
+      }
+
+      if (!filtered.length) {
+        list.innerHTML = '<div class="text-center text-slate-400 py-12 font-medium">No issues found.</div>';
+        return;
+      }
+
+      filtered.forEach(c => {
+        const statusHtml = getStatusHtml(c);
+
+        // Build media thumbnail for the card (first item only)
+        const urls = c.mediaUrls || (c.mediaUrl ? [c.mediaUrl] : []) || (c.image ? [c.image] : []);
+        const thumbUrl = urls[0] || c.image || null;
+        const isVideo = thumbUrl && /\.(mp4|mov|webm|avi)$/i.test(thumbUrl);
+        const thumbHtml = thumbUrl
+          ? (isVideo
+            ? `<video src="${thumbUrl}" class="w-24 h-16 object-cover rounded-xl border border-slate-100 shadow-sm" muted playsinline></video>`
+            : `<img src="${thumbUrl}" alt="issue media" class="w-24 h-16 object-cover rounded-xl border border-slate-100 shadow-sm" />`)
+          : '';
+
+        const confirmedBy = c.confirmedBy || [];
+        const hasConfirmed = currentUserId ? confirmedBy.includes(currentUserId) : false;
+        const confirmBtnClass = hasConfirmed
+          ? 'bg-emerald-600 text-white border-emerald-600 cursor-default'
+          : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100';
+
+        const cardData = encodeURIComponent(JSON.stringify(c));
+        const timeStr = formatTimeAgo(c.createdAt);
+        const isFire = c.priority === 'High';
+        const userName = c.name || c.email || c.user || 'Anonymous';
+
+        list.innerHTML += `
+            <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col sm:flex-row justify-between gap-6">
+              <div class="flex-1">
+                <div class="flex items-center gap-2.5 mb-3">
+                  <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center border border-blue-100">
+                    ${userName.charAt(0).toUpperCase()}
+                  </div>
+                  <span class="font-bold text-slate-800 text-sm">${userName}</span>
+                  <span class="text-xs text-slate-400 font-medium">${timeStr}</span>
+                  ${isFire ? '<span class="ml-1 text-xs px-2 py-0.5 rounded-lg bg-red-50 text-red-600 font-bold tracking-wider uppercase scale-90">Urgent</span>' : ''}
+                </div>
+                <h3 class="font-extrabold text-xl text-slate-900 mb-2 leading-snug tracking-tight">${c.title || c.description || c.text || ''}</h3>
+                ${c.summary ? `<p class="text-sm text-slate-500 mb-4 leading-relaxed font-medium">${c.summary}</p>` : ''}
+                <div class="flex flex-wrap gap-2 mb-4">${statusHtml}</div>
+                <div class="flex gap-3 items-center">
+                  <button onclick="toggleUpvote(this)"
+                    class="upvote-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-600 font-bold text-xs hover:bg-amber-50 hover:text-amber-600 hover:border-amber-100 transition duration-200 border border-slate-100">
+                    <span class="material-symbols-outlined text-sm">arrow_upward</span>
+                    <span class="upvote-count">${c.upvotes || 0}</span>
+                  </button>
+                  <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-600 font-bold text-xs hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition duration-200 border border-slate-100">
+                    <span class="material-symbols-outlined text-sm">chat_bubble</span>
+                    <span>${c.comments || 0}</span>
+                  </button>
+                  <button onclick="confirmIssue(event, '${c.id}', false)"
+                    class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ${confirmBtnClass} transition duration-200 border text-xs font-bold"
+                    ${hasConfirmed ? 'disabled' : ''}>
+                    <span class="material-symbols-outlined text-sm">${hasConfirmed ? 'check_circle' : 'rule'}</span>
+                    <span>${hasConfirmed ? 'Confirmed' : 'Confirm still happening'} (${c.confirmations || 0})</span>
+                  </button>
+                  <div class="tooltip-container">
+                    <div class="button-content font-bold text-xs">
+                      <span class="text">Share</span>
+                      <svg class="share-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92zM18 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 7.02c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                      </svg>
+                    </div>
+                    <div class="tooltip-content">
+                      <div class="social-icons">
+                        <a href="#" class="social-icon twitter">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                        </a>
+                        <a href="#" class="social-icon facebook">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        <a href="#" class="social-icon linkedin">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-col items-end justify-between gap-4">
+                ${thumbHtml}
+                <button onclick="openDetailModal(${cardData})" class="text-blue-600 font-bold text-xs hover:text-blue-700 transition flex items-center gap-1 mt-auto">
+                  <span>View details</span>
+                  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          `;
+      });
+    }
+
+    function renderSidebars() {
+      let currentUser = {};
+      try {
+        currentUser = JSON.parse(localStorage.getItem('ch_user') || '{}');
+      } catch (e) { }
+      const userEmail = currentUser.email || '';
+
+      // 1. Your Issues
+      const yourIssues = userEmail ? allIssues.filter(c => c.email === userEmail) : [];
+      const yourPreview = document.getElementById('yourIssuesPreview');
+      const yourFullList = document.getElementById('yourIssuesFullList');
+
+      yourPreview.innerHTML = yourIssues.slice(0, 2).map(c => `
+          <div class="flex justify-between items-center text-xs py-2 border-b border-slate-50 last:border-0 font-medium">
+            <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wide">${c.issueType || 'Issue'}</span>
+            <span class="text-slate-400 font-bold">${formatTimeAgo(c.createdAt)}</span>
+          </div>
+        `).join('') || '<div class="text-xs text-slate-400 py-2">No issues reported yet.</div>';
+
+      yourFullList.innerHTML = yourIssues.map(c => `
+          <div class="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center border border-blue-100">Y</div>
+              <span class="font-bold text-slate-800 text-xs">You</span>
+              <span class="text-[10px] text-slate-400 font-bold">${formatTimeAgo(c.createdAt)}</span>
+            </div>
+            <div class="font-extrabold text-base text-slate-900 mb-1.5 leading-snug">${c.title || c.description || ''}</div>
+            ${c.summary ? `<p class="text-xs text-slate-500 mb-3 font-medium leading-relaxed">${c.summary}</p>` : ''}
+            <div class="flex gap-2">${getStatusHtml(c)}</div>
+          </div>
+        `).join('') || '<div class="text-slate-400 text-center text-xs font-semibold py-8">No issues reported yet.</div>';
+
+      // 2. Urgent Issues
+      const urgentIssues = allIssues.filter(c => c.priority === 'High');
+      const urgentPreview = document.getElementById('urgentIssuesPreview');
+      const urgentFullList = document.getElementById('urgentIssuesFullList');
+
+      urgentPreview.innerHTML = urgentIssues.slice(0, 2).map(c => `
+          <div class="flex justify-between items-center text-xs py-2 border-b border-slate-50 last:border-0 font-medium">
+            <span class="bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wide">${c.issueType || 'Concern'}</span>
+            <span class="text-slate-400 font-bold">${formatTimeAgo(c.createdAt)}</span>
+          </div>
+        `).join('') || '<div class="text-xs text-slate-400 py-2">No urgent issues reported.</div>';
+
+      urgentFullList.innerHTML = urgentIssues.map(c => `
+          <div class="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center border border-blue-100">
+                ${(c.name || c.email || 'A').charAt(0).toUpperCase()}
+              </div>
+              <span class="font-bold text-slate-800 text-xs">${c.name || c.email || c.user || 'Anonymous'}</span>
+              <span class="text-[10px] text-slate-400 font-bold">${formatTimeAgo(c.createdAt)}</span>
+              <span class="ml-1 text-xs">🔥</span>
+            </div>
+            <div class="font-extrabold text-base text-slate-900 mb-1.5 leading-snug">${c.title || c.description || ''}</div>
+            ${c.summary ? `<p class="text-xs text-slate-500 mb-3 font-medium leading-relaxed">${c.summary}</p>` : ''}
+            <div class="flex gap-2">${getStatusHtml(c)}</div>
+          </div>
+        `).join('') || '<div class="text-slate-400 text-center text-xs font-semibold py-8">No urgent issues reported.</div>';
+    }
+
+    // ── Issue detail modal ─────────────────────────────────────────────────
+    function openDetailModal(issue) {
+      const statuses = issue.status || [];
+      const urls = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []) || [];
+
+      document.getElementById('detailTitle').textContent =
+        issue.title || (issue.issueType ? `${issue.issueType} Issue` : 'Issue Detail');
+      document.getElementById('detailDescription').textContent =
+        issue.description || issue.text || 'No description provided.';
+      document.getElementById('detailType').textContent = issue.issueType || '—';
+      document.getElementById('detailPriority').textContent = issue.priority || '—';
+      document.getElementById('detailReporter').textContent = issue.name || issue.user || 'Anonymous';
+      document.getElementById('detailAddress').textContent = issue.address || '—';
+
+      // Status badges
+      const statusContainer = document.getElementById('detailStatus');
+      statusContainer.innerHTML = getStatusHtml(issue);
+
+      // Media grid — full size images & video player
+      const grid = document.getElementById('detailMediaGrid');
+      const section = document.getElementById('detailMediaSection');
+      const allUrls = urls.length ? urls : (issue.image ? [issue.image] : []);
+      if (allUrls.length) {
+        grid.innerHTML = allUrls.map(url => {
+          const isVid = /\.(mp4|mov|webm|avi)$/i.test(url);
+          return isVid
+            ? `<video src="${url}" controls class="w-full rounded-xl shadow-md"></video>`
+            : `<img src="${url}" alt="media" class="w-full rounded-xl shadow-md object-cover" />`;
+        }).join('');
+        section.classList.remove('hidden');
+      } else {
+        grid.innerHTML = '';
+        section.classList.add('hidden');
+      }
+
+      // Render Status Timeline
+      const timelineContainer = document.getElementById('detailTimeline');
+      const history = issue.statusHistory || [];
+      if (history.length === 0) {
+        // Fallback for older issues without statusHistory
+        timelineContainer.innerHTML = `
+          <div class="relative">
+            <div class="absolute -left-[9px] top-1 w-3.5 h-3.5 rounded-full bg-amber-500 border-4 border-white shadow-sm"></div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-slate-850 text-sm">Reported</span>
+              <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">${formatTimeAgo(issue.createdAt)}</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Issue reported by citizen.</p>
+          </div>
+        `;
+      } else {
+        timelineContainer.innerHTML = history.map((entry, index) => {
+          const isLatest = index === history.length - 1;
+          const dotColor = entry.status === 'Resolved'
+            ? 'bg-emerald-500'
+            : entry.status === 'In Progress'
+              ? 'bg-blue-500'
+              : entry.status === 'Verified'
+                ? 'bg-teal-500'
+                : 'bg-amber-500';
+
+          const dateStr = new Date(entry.timestamp).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          const entryMediaUrls = entry.mediaUrls || [];
+          let proofMediaHtml = '';
+          if (entryMediaUrls.length > 0) {
+            proofMediaHtml = `
+              <div class="flex gap-2 mt-2 flex-wrap">
+                ${entryMediaUrls.map(url => {
+                  const isVid = /\.(mp4|mov|webm|avi)$/i.test(url);
+                  return isVid
+                    ? `<video src="${url}" class="h-16 w-24 object-cover rounded-lg border border-slate-200 cursor-pointer transition-all duration-300 hover:opacity-90" onclick="toggleExpandMedia(this)"></video>`
+                    : `<img src="${url}" class="h-16 w-24 object-cover rounded-lg border border-slate-200 cursor-pointer transition-all duration-300 hover:opacity-90" onclick="toggleExpandMedia(this)" />`;
+                }).join('')}
+              </div>
+            `;
+          }
+
+          return `
+            <div class="relative">
+              <div class="absolute -left-[9px] top-1 w-3.5 h-3.5 rounded-full ${dotColor} border-4 border-white shadow-sm ${isLatest ? 'ring-4 ring-blue-50' : ''}"></div>
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-slate-800 text-sm">${entry.status}</span>
+                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">${dateStr}</span>
+              </div>
+              ${entry.note ? `<p class="text-xs text-slate-500 mt-1 font-medium leading-relaxed">${entry.note}</p>` : ''}
+              ${proofMediaHtml}
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Comments List
+      const commentsListContainer = document.getElementById('detailCommentsList');
+      const commentsList = issue.commentsList || [];
+      document.getElementById('detailCommentsTitle').textContent = `Comments (${commentsList.length})`;
+      
+      if (commentsList.length === 0) {
+        commentsListContainer.innerHTML = `<div class="text-slate-400 text-xs font-semibold py-2">No comments yet.</div>`;
+      } else {
+        commentsListContainer.innerHTML = commentsList.map(comment => {
+          const isResolver = comment.role === 'resolver';
+          const badgeHtml = isResolver
+            ? `<span class="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">verified</span>Verified Resolver</span>`
+            : `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center">Citizen</span>`;
+          
+          return `
+            <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/80 text-xs">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="font-extrabold text-slate-800">${comment.username}</span>
+                ${badgeHtml}
+                <span class="text-[9px] font-bold text-slate-400 ml-auto">${new Date(comment.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p class="text-slate-650 font-medium leading-relaxed">${comment.text}</p>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Comment Form or Login Message
+      const token = localStorage.getItem('ch_token');
+      const formContainer = document.getElementById('detailCommentFormContainer');
+      if (token) {
+        formContainer.innerHTML = `
+          <form onsubmit="postCitizenComment(event, '${issue.id}')" class="flex gap-2">
+            <input type="text" id="detailCommentInput" placeholder="Write a comment..." class="flex-1 border border-slate-200 bg-slate-50/50 rounded-xl px-4 py-2 text-xs font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-slate-800" required />
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-blue-600/10">Post</button>
+          </form>
+        `;
+      } else {
+        formContainer.innerHTML = `
+          <div class="bg-slate-50/50 rounded-xl p-3 border border-dashed border-slate-200 text-center text-xs text-slate-500 font-semibold">
+            Please <a href="sign-in.html" class="text-blue-600 hover:underline">sign in</a> to post comments.
+          </div>
+        `;
+      }
+
+      // Actions / Verification button
+      let currentUser = {};
+      try {
+        currentUser = JSON.parse(localStorage.getItem('ch_user') || '{}');
+      } catch (e) { }
+      const currentUserId = currentUser.id || '';
+
+      const confirmedBy = issue.confirmedBy || [];
+      const hasConfirmed = currentUserId ? confirmedBy.includes(currentUserId) : false;
+      const confirmBtnClass = hasConfirmed
+        ? 'bg-emerald-600 text-white border-emerald-600 cursor-default'
+        : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100';
+
+      const detailActions = document.getElementById('detailActions');
+      detailActions.innerHTML = `
+        <button onclick="confirmIssue(event, '${issue.id}', true)"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-full ${confirmBtnClass} transition duration-200 border text-xs font-bold"
+          ${hasConfirmed ? 'disabled' : ''}>
+          <span class="material-symbols-outlined text-sm">${hasConfirmed ? 'check_circle' : 'rule'}</span>
+          <span>${hasConfirmed ? 'Confirmed' : 'Confirm still happening'} (${issue.confirmations || 0})</span>
+        </button>
+      `;
+
+      document.getElementById('issueDetailModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function toggleExpandMedia(el) {
+      if (el.classList.contains('h-16')) {
+        el.classList.remove('h-16', 'w-24', 'object-cover');
+        el.classList.add('w-full', 'max-h-96', 'object-contain', 'rounded-xl', 'my-2');
+      } else {
+        el.classList.remove('w-full', 'max-h-96', 'object-contain', 'rounded-xl', 'my-2');
+        el.classList.add('h-16', 'w-24', 'object-cover');
+      }
+    }
+
+    async function postCitizenComment(e, issueId) {
+      e.preventDefault();
+      const token = localStorage.getItem('ch_token');
+      if (!token) {
+        toast('Please log in to post comments.', false);
+        return;
+      }
+      
+      const form = e.target;
+      const input = document.getElementById('detailCommentInput');
+      const text = input.value.trim();
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      if (!text) return;
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/issues/${issueId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ text })
+        });
+
+        if (res.ok) {
+          toast('Comment posted successfully! ✓');
+          input.value = '';
+          await fetchIssues(); // Refetches all issues
+          const updated = allIssues.find(i => i.id === issueId);
+          if (updated) {
+            openDetailModal(updated);
+          }
+        } else {
+          const data = await res.json();
+          toast(data.message || 'Failed to post comment', false);
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error posting comment:', err);
+        toast('Network error posting comment', false);
+        submitBtn.disabled = false;
+      }
+    }
+    function closeDetailModal() {
+      document.getElementById('issueDetailModal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('issueDetailModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('issueDetailModal')) closeDetailModal();
+    });
+
+    // ── Upvote toggle ──────────────────────────────────────────────────────
+    function toggleUpvote(btn) {
+      const countSpan = btn.querySelector('.upvote-count');
+      let count = parseInt(countSpan.textContent, 10);
+      const isActive = btn.classList.contains('bg-blue-600');
+      if (isActive) {
+        btn.className = "upvote-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-600 font-bold text-xs hover:bg-amber-50 hover:text-amber-600 hover:border-amber-100 transition duration-200 border border-slate-100";
+        count--;
+      } else {
+        btn.className = "upvote-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600 text-white font-bold text-xs transition duration-200 border border-blue-600";
+        count++;
+      }
+      countSpan.textContent = count;
+    }
+
+    function toast(msg, success = true) {
+      const el = document.createElement('div');
+      el.className = `fixed top-4 right-4 ${success ? 'bg-emerald-600' : 'bg-rose-600'} text-white px-6 py-3 rounded-lg shadow-lg z-[9999] flex items-center gap-2 font-bold text-xs transition-all duration-300`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 3500);
+    }
+
+    async function confirmIssue(event, issueId, isFromModal = false) {
+      if (event) event.stopPropagation();
+
+      const token = localStorage.getItem('ch_token');
+      if (!token) {
+        toast('Please log in to confirm issues.', false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/issues/${issueId}/confirm`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          toast(data.status === 'Verified' ? '✅ Issue verified by community!' : 'Confirmation recorded! ✓');
+          await fetchIssues(); // Refetches all issues and updates UI
+          if (isFromModal) {
+            // Find the updated issue and re-open modal to refresh detail action button and badges
+            const updated = allIssues.find(i => i.id === issueId);
+            if (updated) {
+              openDetailModal(updated);
+            }
+          }
+        } else {
+          toast(data.message || 'Failed to record confirmation', false);
+        }
+      } catch (err) {
+        console.error('Error confirming issue:', err);
+        toast('Network error confirming issue', false);
+      }
+    }
+
+    // ── Filters ───────────────────────────────────────────────────────────
+    const urgencyFilter = document.getElementById('urgencyFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    function updateIssues() { renderIssues(urgencyFilter.value, typeFilter.value); }
+    urgencyFilter.addEventListener('change', updateIssues);
+    typeFilter.addEventListener('change', updateIssues);
+    // Initial fetch
+    fetchIssues();
+
+    // ── Load profile from localStorage ────────────────────────────────────
+    try {
+      const user = JSON.parse(localStorage.getItem('ch_user') || '{}');
+      // Sidebar profile
+      if (user.name) document.getElementById('profileName').textContent = user.name;
+      if (user.email) document.getElementById('profileEmail').textContent = user.email;
+      // Header profile
+      if (user.name) document.getElementById('headerProfileName').textContent = user.name;
+      if (user.email) document.getElementById('headerProfileEmail').textContent = user.email;
+      if (user.phone) document.getElementById('headerProfilePhone').textContent = user.phone;
+      if (user.address) document.getElementById('headerProfileAddress').textContent = user.address;
+    } catch (_) { }
+
+    // ── Logout Modal ───────────────────────────────────────────────────────
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      document.getElementById('logoutModal').style.display = 'flex';
+    });
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+      document.getElementById('logoutModal').style.display = 'none';
+    });
+    document.getElementById('confirmLogout').addEventListener('click', () => {
+      localStorage.removeItem('ch_token');
+      localStorage.removeItem('ch_user');
+      window.location.href = 'landing.html';
+    });
+
+    // ── Your Issues Popup ──────────────────────────────────────────────────
+    function openPopup(overlayId, panelId) {
+      document.getElementById(overlayId).classList.remove('hidden');
+      setTimeout(() => {
+        const p = document.getElementById(panelId);
+        p.classList.remove('translate-x-full', 'opacity-0');
+      }, 10);
+    }
+    function closePopup(overlayId, panelId) {
+      const p = document.getElementById(panelId);
+      p.classList.add('translate-x-full', 'opacity-0');
+      setTimeout(() => document.getElementById(overlayId).classList.add('hidden'), 300);
+    }
+
+    document.getElementById('openIssuesSidebar').addEventListener('click', () =>
+      openPopup('issuesPopupOverlay', 'issuesPopupPanel'));
+    document.getElementById('closeIssuesPopup').addEventListener('click', () =>
+      closePopup('issuesPopupOverlay', 'issuesPopupPanel'));
+    document.getElementById('issuesPopupOverlay').addEventListener('click', () =>
+      closePopup('issuesPopupOverlay', 'issuesPopupPanel'));
+
+    document.getElementById('openUrgentIssuesPopup').addEventListener('click', () =>
+      openPopup('urgentIssuesPopupOverlay', 'urgentIssuesPopupPanel'));
+    document.getElementById('closeUrgentIssuesPopup').addEventListener('click', () =>
+      closePopup('urgentIssuesPopupOverlay', 'urgentIssuesPopupPanel'));
+    document.getElementById('urgentIssuesPopupOverlay').addEventListener('click', () =>
+      closePopup('urgentIssuesPopupOverlay', 'urgentIssuesPopupPanel'));
+
+    // ── New Issue Modal ────────────────────────────────────────────────────
+    function openNewIssueModal() {
+      try {
+        const user = JSON.parse(localStorage.getItem('ch_user') || '{}');
+        if (user.name) document.getElementById('name').value = user.name;
+        if (user.email) document.getElementById('email').value = user.email;
+        if (user.phone) document.getElementById('phone').value = user.phone;
+        if (user.address) document.getElementById('address').value = user.address;
+      } catch (_) { }
+
+      // Reset geo state
+      capturedLat = null;
+      capturedLng = null;
+      document.getElementById('geoLat').value = '';
+      document.getElementById('geoLng').value = '';
+
+      // Try geolocation
+      const geoStatus = document.getElementById('geoStatus');
+      const geoIcon   = document.getElementById('geoStatusIcon');
+      const geoText   = document.getElementById('geoStatusText');
+      geoStatus.classList.remove('hidden');
+      geoStatus.className = 'mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400';
+      geoIcon.textContent = 'my_location';
+      geoText.textContent = 'Detecting location…';
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            capturedLat = pos.coords.latitude;
+            capturedLng = pos.coords.longitude;
+            document.getElementById('geoLat').value = capturedLat;
+            document.getElementById('geoLng').value = capturedLng;
+            geoStatus.className = 'mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600';
+            geoIcon.textContent = 'location_on';
+            geoText.textContent = `GPS: ${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)}`;
+          },
+          () => {
+            geoStatus.className = 'mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-amber-500';
+            geoIcon.textContent = 'location_off';
+            geoText.textContent = 'Location unavailable — please type your address above';
+          },
+          { timeout: 8000 }
+        );
+      } else {
+        geoStatus.className = 'mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-amber-500';
+        geoIcon.textContent = 'location_off';
+        geoText.textContent = 'Geolocation not supported — please type your address above';
+      }
+
+      document.getElementById('newIssueModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeNewIssueModal() {
+      document.getElementById('newIssueModal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('openNewIssue').addEventListener('click', openNewIssueModal);
+    document.getElementById('newIssueModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('newIssueModal')) closeNewIssueModal();
+    });
+
+    // ── Media upload preview ───────────────────────────────────────────────
+    const mediaInput = document.getElementById('mediaInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadPreview = document.getElementById('uploadPreview');
+    let selectedFiles = []; // DataTransfer-backed list for preview
+
+    function renderPreview() {
+      uploadPreview.innerHTML = '';
+      selectedFiles.forEach((file, i) => {
+        const url = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith('video/');
+        const item = document.createElement('div');
+        item.className = 'upload-preview-item';
+        item.innerHTML = isVideo
+          ? `<video src="${url}" muted playsinline class="w-full h-full object-cover"></video>`
+          : `<img src="${url}" alt="preview" />`;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.addEventListener('click', e => { e.stopPropagation(); removeFile(i); });
+        item.appendChild(removeBtn);
+        uploadPreview.appendChild(item);
+      });
+    }
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      renderPreview();
+    }
+    mediaInput.addEventListener('change', () => {
+      const newFiles = Array.from(mediaInput.files);
+      const combined = [...selectedFiles, ...newFiles].slice(0, 5);
+      selectedFiles = combined;
+      renderPreview();
+      mediaInput.value = ''; // reset so same file can be re-selected
+    });
+    // Drag and drop on the upload zone
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const dropped = Array.from(e.dataTransfer.files).filter(f =>
+        f.type.startsWith('image/') || f.type.startsWith('video/'));
+      selectedFiles = [...selectedFiles, ...dropped].slice(0, 5);
+      renderPreview();
+    });
+
+    // ── AI Auto-fill ────────────────────────────────────────────────────────
+    document.getElementById('aiAnalyzeBtn').addEventListener('click', async function () {
+      const desc = document.getElementById('description').value.trim();
+      if (!desc && selectedFiles.length === 0) {
+        toast('Please add a description or image first.', false);
+        return;
+      }
+
+      const btn = this;
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="material-symbols-outlined text-sm animate-spin">sync</span> Analyzing...`;
+
+      const fd = new FormData();
+      fd.append('description', desc);
+      if (selectedFiles.length > 0) {
+        fd.append('media', selectedFiles[0]); // Send first image for analysis
+      }
+
+      try {
+        const res = await fetch('/api/issues/analyze', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.title) document.getElementById('title').value = data.title;
+          if (data.summary) document.getElementById('summary').value = data.summary;
+          if (data.category) {
+            const opts = Array.from(document.getElementById('issueType').options).map(o => o.value);
+            if (opts.includes(data.category)) {
+              document.getElementById('issueType').value = data.category;
+            } else {
+              document.getElementById('issueType').value = 'Other';
+            }
+          }
+          if (data.priority) {
+            const pRadio = document.querySelector(`input[name="priority"][value="${data.priority}"]`);
+            if (pRadio) pRadio.checked = true;
+          }
+          toast('AI analysis complete! Please review.', true);
+        } else {
+          console.error('AI analyze error from server:', JSON.stringify(data, null, 2));
+          toast(data.message || 'AI analysis failed.', false);
+        }
+      } catch (err) {
+        console.error('AI analyze fetch error:', err);
+        toast('Error reaching AI service.', false);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    });
+
+    // ── Issue Form Submission ──────────────────────────────────────────────
+    document.getElementById('issueForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      // Use FormData so multer on the server can parse both fields + files.
+      const fd = new FormData();
+      fd.append('name', document.getElementById('name').value);
+      fd.append('email', document.getElementById('email').value);
+      fd.append('phone', document.getElementById('phone').value);
+      fd.append('address', document.getElementById('address').value);
+      // Append GPS coords if captured
+      if (capturedLat !== null) fd.append('lat', capturedLat);
+      if (capturedLng !== null) fd.append('lng', capturedLng);
+      fd.append('issueType', document.getElementById('issueType').value);
+      fd.append('title', document.getElementById('title').value);
+      fd.append('summary', document.getElementById('summary').value);
+      fd.append('description', document.getElementById('description').value);
+      const checkedPriority = document.querySelector('input[name="priority"]:checked');
+      if (checkedPriority) fd.append('priority', checkedPriority.value);
+      selectedFiles.forEach(file => fd.append('media', file));
+
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const origText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+          <svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>Submitting…`;
+
+
+
+      try {
+        // No Content-Type header — the browser sets it automatically with
+        // the correct multipart boundary when using FormData.
+        const res = await fetch('/api/issues', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (res.ok) {
+          toast('Issue submitted successfully! ✓');
+          closeNewIssueModal();
+          this.reset();
+          selectedFiles = [];
+          renderPreview();
+          fetchIssues();
+        } else {
+          toast(data.message || 'Submission failed. Please try again.', false);
+        }
+      } catch (err) {
+        toast('Network error — is the server running?', false);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = origText;
+      }
+    });
+
+    // ── Notifications & Settings Popups ───────────────────────────────────
+    function initPopupToggle(btnId, popupId, otherBtnId, otherPopupId) {
+      let open = false;
+      const btn = document.getElementById(btnId);
+      const popup = document.getElementById(popupId);
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        open = !open;
+        popup.classList.toggle('scale-95', !open);
+        popup.classList.toggle('opacity-0', !open);
+        popup.classList.toggle('pointer-events-none', !open);
+        popup.classList.toggle('scale-100', open);
+        popup.classList.toggle('opacity-100', open);
+        // Close the other popup
+        const other = document.getElementById(otherPopupId);
+        other.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+        other.classList.remove('scale-100', 'opacity-100');
+      });
+      document.addEventListener('click', e => {
+        if (open && !popup.contains(e.target) && !btn.contains(e.target)) {
+          popup.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+          popup.classList.remove('scale-100', 'opacity-100');
+          open = false;
+        }
+      });
+    }
+    initPopupToggle('profileBtn', 'profilePopup', 'notificationsBtn', 'notificationsPopup');
+    initPopupToggle('notificationsBtn', 'notificationsPopup', 'settingsBtn', 'settingsPopup');
+    initPopupToggle('settingsBtn', 'settingsPopup', 'profileBtn', 'profilePopup');
+  </script>
+</body>
+
+</html>

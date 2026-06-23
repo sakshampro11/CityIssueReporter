@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Firebase service account key — contains private credentials, never commit
+server/config/*.json
+server/*.json
+
+# macOS
+.DS_Store
+
+# Uploads
+server/uploads/

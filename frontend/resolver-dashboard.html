@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resolver Dashboard | Lokally</title>
+  <meta name="description" content="Dashboard for resolving community issues." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-space-grotesk { font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-16">
+  <!-- Sticky Glassmorphic Header -->
+  <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 sm:px-16 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <a href="landing.html" class="text-2xl font-extrabold text-blue-600 font-space-grotesk hover:opacity-95 transition flex items-center gap-1.5">
+        Lokally
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+      </a>
+      <span class="bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ml-2">Resolver Portal</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm font-semibold text-slate-700 hidden sm:inline" id="resolverName">Resolver</span>
+      <button onclick="handleLogout()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        Log Out
+      </button>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <main class="max-w-4xl mx-auto px-6 mt-10">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-extrabold text-slate-800 font-space-grotesk">Open Concerns</h1>
+        <p class="text-sm text-slate-500 mt-1">Review reported problems and log status history updates.</p>
+      </div>
+      <div class="text-right">
+        <span class="text-xs font-extrabold text-slate-400 uppercase tracking-widest block">Active Issues</span>
+        <span id="issueCount" class="text-3xl font-extrabold text-blue-600">0</span>
+      </div>
+    </div>
+
+    <!-- Issues Feed -->
+    <div id="issuesFeed" class="space-y-6">
+      <!-- Issues cards will be dynamically injected here -->
+      <div class="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 font-medium shadow-sm">
+        Loading issues...
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ── Global Toast Utility ────────────────────────────────────────────────
+    function toast(msg, success = true) {
+      const el = document.createElement('div');
+      el.className = `fixed top-4 right-4 ${success ? 'bg-emerald-600' : 'bg-rose-600'} text-white px-6 py-3 rounded-lg shadow-lg z-[9999] flex items-center gap-2 font-bold text-xs transition-all duration-300`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 3500);
+    }
+
+    // ── Auth Guard Check ────────────────────────────────────────────────────
+    const token = localStorage.getItem('ch_token');
+    const user = JSON.parse(localStorage.getItem('ch_user') || '{}');
+
+    if (!token || user.role !== 'resolver') {
+      window.location.href = 'resolver-login.html';
+    } else {
+      document.getElementById('resolverName').textContent = user.name || 'Resolver';
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('ch_token');
+      localStorage.removeItem('ch_user');
+      window.location.href = 'resolver-login.html';
+    }
+
+    // ── Load & Render Issues ────────────────────────────────────────────────
+    let openIssues = [];
+
+    async function loadIssues() {
+      try {
+        const res = await fetch('/api/issues', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const all = await res.json();
+          // Filter out resolved issues for the resolver dashboard
+          openIssues = all.filter(issue => issue.status !== 'Resolved');
+          renderIssues();
+        } else {
+          toast('Failed to load issues', false);
+          if (res.status === 401 || res.status === 403) {
+            handleLogout();
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching issues:', err);
+        toast('Network error loading issues', false);
+      }
+    }
+
+    function renderIssues() {
+      const feed = document.getElementById('issuesFeed');
+      document.getElementById('issueCount').textContent = openIssues.length;
+
+      if (openIssues.length === 0) {
+        feed.innerHTML = `
+          <div class="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 font-semibold shadow-sm">
+            <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">verified</span>
+            No open issues left to resolve! All caught up.
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = openIssues.map(issue => {
+        const reporter = issue.name || issue.user || 'Anonymous';
+        const dateStr = new Date(issue.createdAt).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        // Setup status badge styling
+        const statusHtml = getStatusBadge(issue.status);
+
+        // Build priority badge
+        const priorityCls = issue.priority === 'High'
+          ? 'bg-rose-50 text-rose-600 border border-rose-100'
+          : issue.priority === 'Medium'
+            ? 'bg-amber-50 text-amber-600 border border-amber-100'
+            : 'bg-slate-50 text-slate-500 border border-slate-100';
+
+        // Attachments
+        const urls = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []) || [];
+        const thumbUrl = urls[0] || null;
+        const isVideo = thumbUrl && /\.(mp4|mov|webm|avi)$/i.test(thumbUrl);
+        const mediaHtml = thumbUrl
+          ? (isVideo
+            ? `<video src="${thumbUrl}" class="w-full h-32 object-cover rounded-xl mt-3" muted playsinline></video>`
+            : `<img src="${thumbUrl}" alt="media" class="w-full h-32 object-cover rounded-xl mt-3" />`)
+          : '';
+
+        return `
+          <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm flex flex-col gap-6">
+            <div class="flex flex-col md:flex-row gap-6 justify-between">
+              <div class="flex-1">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                  <span class="bg-blue-50 text-blue-600 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-blue-100">${issue.issueType || 'General'}</span>
+                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded ${priorityCls}">${issue.priority || 'Low'} Priority</span>
+                  ${statusHtml}
+                  <span class="text-xs text-slate-400 font-bold ml-auto">${dateStr}</span>
+                </div>
+
+                <h3 class="font-extrabold text-xl text-slate-800 leading-snug tracking-tight">${issue.title || 'Untitled Issue'}</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1">📍 Address: ${issue.address || '—'}</p>
+                <p class="text-sm text-slate-500 mt-3 font-medium leading-relaxed">${issue.description || 'No description provided.'}</p>
+                ${mediaHtml}
+              </div>
+
+              <!-- Status Transition Form -->
+              <div class="w-full md:w-72 bg-slate-50/50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-3">
+                <h4 class="font-extrabold text-xs text-slate-700 uppercase tracking-wider">Update Status</h4>
+                <form onsubmit="updateIssueStatus(event, '${issue.id}')" class="space-y-3" enctype="multipart/form-data">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target Status</label>
+                    <select name="status" onchange="toggleProofUpload(this, '${issue.id}')" class="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400">
+                      <option value="In Progress" ${issue.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  <div id="proofUploadContainer-${issue.id}" class="hidden">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Upload Proof (Image/Video)</label>
+                    <input type="file" name="media" multiple class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*,video/*" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Update Note</label>
+                    <textarea name="note" rows="2" placeholder="Explain the progress or resolution..." class="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400" required></textarea>
+                  </div>
+                  <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition shadow-md shadow-blue-600/10">
+                    Submit Update
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="border-t border-slate-100 pt-4">
+              <h4 class="font-extrabold text-xs text-slate-700 uppercase tracking-wider mb-3">Comments (${issue.comments || 0})</h4>
+              <div class="space-y-3 max-h-40 overflow-y-auto pr-2 mb-3" id="commentsList-${issue.id}">
+                ${(issue.commentsList || []).map(comment => {
+                  const isResolver = comment.role === 'resolver';
+                  const badgeHtml = isResolver
+                    ? `<span class="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">verified</span>Resolver</span>`
+                    : `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center">Citizen</span>`;
+                  return `
+                    <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/80 text-xs">
+                      <div class="flex items-center gap-2 mb-1.5">
+                        <span class="font-extrabold text-slate-800">${comment.username}</span>
+                        ${badgeHtml}
+                        <span class="text-[9px] font-bold text-slate-400 ml-auto">${new Date(comment.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p class="text-slate-650 font-medium leading-relaxed">${comment.text}</p>
+                    </div>
+                  `;
+                }).join('') || '<div class="text-slate-400 text-xs font-semibold py-2">No comments yet.</div>'}
+              </div>
+              <form onsubmit="postResolverComment(event, '${issue.id}')" class="flex gap-2">
+                <input type="text" name="commentText" placeholder="Write a comment..." class="flex-1 border border-slate-200 bg-white rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400" required />
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-blue-600/10">Post</button>
+              </form>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getStatusBadge(status) {
+      const cls = status === 'Resolved'
+        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+        : status === 'Verified'
+          ? "bg-teal-50 text-teal-600 border-teal-100"
+          : status === 'In Progress'
+            ? "bg-blue-50 text-blue-600 border-blue-100"
+            : "bg-amber-50 text-amber-600 border-amber-100";
+
+      return `<span class="px-2 py-0.5 rounded border text-[10px] font-extrabold uppercase ${cls}">${status || 'Reported'}</span>`;
+    }
+
+    function toggleProofUpload(select, id) {
+      const container = document.getElementById(`proofUploadContainer-${id}`);
+      if (select.value === 'Resolved') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    async function postResolverComment(e, issueId) {
+      e.preventDefault();
+      const form = e.target;
+      const input = form.elements.commentText;
+      const text = input.value.trim();
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      if (!text) return;
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/issues/${issueId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ text })
+        });
+
+        if (res.ok) {
+          toast('Comment posted successfully! ✓');
+          input.value = '';
+          await loadIssues(); // Re-fetch all and update view
+        } else {
+          const data = await res.json();
+          toast(data.message || 'Failed to post comment', false);
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error posting comment:', err);
+        toast('Network error posting comment', false);
+        submitBtn.disabled = false;
+      }
+    }
+
+    // ── Submit Status Change ────────────────────────────────────────────────
+    async function updateIssueStatus(e, id) {
+      e.preventDefault();
+      const form = e.target;
+      const select = form.elements.status;
+      const textarea = form.elements.note;
+      const fileInput = form.elements.media;
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Updating...';
+
+      const fd = new FormData();
+      fd.append('status', select.value);
+      fd.append('note', textarea.value);
+      if (fileInput && fileInput.files.length > 0) {
+        for (let i = 0; i < fileInput.files.length; i++) {
+          fd.append('media', fileInput.files[i]);
+        }
+      }
+
+      try {
+        const res = await fetch(`/api/issues/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: fd
+        });
+
+        if (res.ok) {
+          toast('Issue status updated successfully! ✓');
+          await loadIssues(); // Re-fetch list
+        } else {
+          const data = await res.json();
+          toast(data.message || 'Failed to update issue status', false);
+          submitBtn.disabled = false;
+          submitBtn.textContent = origText;
+        }
+      } catch (err) {
+        console.error('Error updating status:', err);
+        toast('Network error updating status', false);
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
+      }
+    }
+
+    // Init
+    loadIssues();
+  </script>
+</body>
+</html>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map View — Lokally</title>
+  <meta name="description" content="View all reported community issues on an interactive map. City issue reporter." />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-600: #2563eb;
+      --blue-500: #3b82f6;
+      --blue-50:  #eff6ff;
+      --slate-900: #0f172a;
+      --slate-700: #334155;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-100: #f1f5f9;
+      --slate-50:  #f8fafc;
+      --white: #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--slate-50);
+      color: var(--slate-900);
+    }
+
+    /* ── Navbar ─────────────────────────────────────────────────────────── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      height: 64px;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      gap: 16px;
+    }
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--blue-600);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-logo .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--blue-500);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.6; transform: scale(0.85); }
+    }
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--slate-500);
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-back:hover { background: var(--blue-50); color: var(--blue-600); border-color: #bfdbfe; }
+    .nav-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      height: 100vh;
+      padding-top: 64px;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+      background: var(--white);
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--slate-100);
+    }
+    .sidebar-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem; font-weight: 800;
+      color: var(--slate-900); margin-bottom: 12px;
+    }
+    .filter-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .filter-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1.5px solid #e2e8f0;
+      font-size: 0.7rem; font-weight: 700;
+      cursor: pointer;
+      background: var(--slate-50);
+      color: var(--slate-500);
+      transition: all 0.18s;
+      user-select: none;
+    }
+    .filter-chip.active { border-color: var(--blue-500); background: var(--blue-50); color: var(--blue-600); }
+    .filter-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .issue-list {
+      flex: 1; overflow-y: auto; padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .issue-list::-webkit-scrollbar { width: 4px; }
+    .issue-list::-webkit-scrollbar-track { background: transparent; }
+    .issue-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    .issue-card {
+      background: var(--slate-50);
+      border: 1.5px solid var(--slate-100);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .issue-card:hover { border-color: var(--blue-500); background: var(--blue-50); transform: translateY(-1px); }
+    .issue-card.active { border-color: var(--blue-600); background: var(--blue-50); }
+    .issue-card .cat-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.65rem; font-weight: 800;
+      padding: 3px 9px; border-radius: 999px;
+      margin-bottom: 7px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .issue-card h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--slate-900); margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .issue-card .meta {
+      font-size: 0.7rem; color: var(--slate-400); font-weight: 500;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .issue-card .thumb {
+      width: 48px; height: 36px;
+      border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--slate-100);
+      float: right; margin-left: 10px;
+    }
+    .no-location-note {
+      font-size: 0.7rem; color: var(--slate-400);
+      font-style: italic; margin-top: 4px;
+    }
+
+    .sidebar-empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--slate-400);
+      font-size: 0.8rem;
+    }
+
+    /* ── Map ─────────────────────────────────────────────────────────────── */
+    #map {
+      flex: 1;
+      z-index: 1;
+    }
+
+    /* ── Legend ──────────────────────────────────────────────────────────── */
+    .legend {
+      position: absolute;
+      bottom: 32px; right: 16px;
+      z-index: 500;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      min-width: 160px;
+    }
+    .legend h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem; font-weight: 800;
+      color: var(--slate-500);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.72rem; font-weight: 600;
+      color: var(--slate-700);
+      margin-bottom: 6px;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.8);
+    }
+
+    /* ── Leaflet popup overrides ─────────────────────────────────────────── */
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+      border: 1px solid #e2e8f0 !important;
+      padding: 0 !important;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+    .leaflet-popup-tip-container { display: none; }
+    .popup-inner {
+      padding: 16px 18px;
+      min-width: 220px; max-width: 280px;
+    }
+    .popup-thumb {
+      width: 100%; height: 110px;
+      object-fit: cover;
+    }
+    .popup-thumb-video {
+      width: 100%; height: 110px;
+      object-fit: cover; display: block;
+    }
+    .popup-cat {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; font-weight: 800;
+      padding: 3px 9px; border-radius: 999px;
+      margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .popup-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem; font-weight: 800;
+      color: #0f172a; margin-bottom: 8px; line-height: 1.3;
+    }
+    .popup-row {
+      display: flex; gap: 4px; align-items: center;
+      font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 3px;
+    }
+    .popup-row .material-symbols-outlined { font-size: 13px; color: #94a3b8; }
+    .popup-badge {
+      display: inline-block;
+      font-size: 0.6rem; font-weight: 800;
+      padding: 2px 8px; border-radius: 999px;
+      margin-top: 8px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    /* ── Loading overlay ─────────────────────────────────────────────────── */
+    #loadingOverlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px;
+      transition: opacity 0.4s;
+    }
+    #loadingOverlay .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--blue-600);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingOverlay p {
+      font-size: 0.85rem; font-weight: 600; color: var(--slate-500);
+    }
+
+    /* ── Stats bar ───────────────────────────────────────────────────────── */
+    .stats-bar {
+      padding: 10px 20px;
+      background: var(--white);
+      border-bottom: 1px solid var(--slate-100);
+      display: flex; gap: 20px; align-items: center;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .stats-bar .stat { color: var(--slate-500); }
+    .stats-bar .stat span { color: var(--blue-600); }
+
+    /* Mobile sidebar toggle */
+    .mobile-sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 600;
+      background: var(--blue-600);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 24px;
+      font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 24px rgba(37,99,235,0.35);
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed; left: 0; top: 64px; bottom: 0;
+        transform: translateX(-100%); z-index: 700;
+        width: 100%;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-sidebar-toggle { display: flex; }
+      .legend { bottom: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>Loading issues map…</p>
+</div>
+
+<!-- Navbar -->
+<nav class="nav">
+  <a href="landing.html" class="nav-logo">
+    Lokally<span class="dot"></span>
+  </a>
+  <div class="nav-title">
+    <span class="material-symbols-outlined" style="font-size:18px;color:#94a3b8">map</span>
+    Issues Map
+  </div>
+  <a href="index.html" class="nav-back">
+    <span class="material-symbols-outlined" style="font-size:16px">arrow_back</span>
+    Dashboard
+  </a>
+</nav>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>Issues</h2>
+      <!-- Category filter chips -->
+      <div class="filter-row" id="filterRow">
+        <div class="filter-chip active" data-cat="all">
+          <span class="chip-dot" style="background:#64748b"></span> All
+        </div>
+        <div class="filter-chip" data-cat="Pothole">
+          <span class="chip-dot" style="background:#f97316"></span> Pothole
+        </div>
+        <div class="filter-chip" data-cat="Water">
+          <span class="chip-dot" style="background:#3b82f6"></span> Water
+        </div>
+        <div class="filter-chip" data-cat="Electric">
+          <span class="chip-dot" style="background:#eab308"></span> Electric
+        </div>
+        <div class="filter-chip" data-cat="Waste">
+          <span class="chip-dot" style="background:#22c55e"></span> Waste
+        </div>
+        <div class="filter-chip" data-cat="Streetlight">
+          <span class="chip-dot" style="background:#a855f7"></span> Streetlight
+        </div>
+        <div class="filter-chip" data-cat="Road">
+          <span class="chip-dot" style="background:#f97316"></span> Road
+        </div>
+        <div class="filter-chip" data-cat="Sanitation">
+          <span class="chip-dot" style="background:#22c55e"></span> Sanitation
+        </div>
+        <div class="filter-chip" data-cat="Other">
+          <span class="chip-dot" style="background:#94a3b8"></span> Other
+        </div>
+      </div>
+    </div>
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">Total: <span id="statTotal">0</span></div>
+      <div class="stat">Mapped: <span id="statMapped">0</span></div>
+      <div class="stat">High Priority: <span id="statHigh">0</span></div>
+    </div>
+    <!-- Issue list -->
+    <div class="issue-list" id="issueList">
+      <div class="sidebar-empty">Loading issues…</div>
+    </div>
+  </aside>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Legend (positioned relative to map area) -->
+  <div class="legend">
+    <h3>Category</h3>
+    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> Pothole / Road</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Water</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div> Electric</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Waste / Sanitation</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div> Streetlight</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Other</div>
+  </div>
+</div>
+
+<!-- Mobile toggle -->
+<button class="mobile-sidebar-toggle" id="mobileSidebarToggle">
+  <span class="material-symbols-outlined" style="font-size:18px">list</span>
+  Issue List
+</button>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  // ── Category colour mapping ───────────────────────────────────────────────
+  const CAT_COLORS = {
+    Pothole:    '#f97316',
+    Road:       '#f97316',
+    Water:      '#3b82f6',
+    Electric:   '#eab308',
+    Waste:      '#22c55e',
+    Sanitation: '#22c55e',
+    Streetlight:'#a855f7',
+    Other:      '#94a3b8',
+  };
+  function catColor(issueType) {
+    return CAT_COLORS[issueType] || '#94a3b8';
+  }
+
+  // ── Build SVG circle marker icon ─────────────────────────────────────────
+  function makeIcon(color) {
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <ellipse cx="16" cy="37" rx="6" ry="3" fill="rgba(0,0,0,0.18)"/>
+        <path d="M16 2C9.37 2 4 7.37 4 14c0 9 12 24 12 24s12-15 12-24C28 7.37 22.63 2 16 2z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="14" r="5.5" fill="white" opacity="0.9"/>
+      </svg>`;
+    return L.divIcon({
+      html: svg,
+      className: '',
+      iconSize: [32, 40],
+      iconAnchor: [16, 40],
+      popupAnchor: [0, -42],
+    });
+  }
+
+  // ── Badge helpers ─────────────────────────────────────────────────────────
+  function priorityBadge(priority) {
+    const cls = priority === 'High'
+      ? 'background:#fee2e2;color:#dc2626'
+      : priority === 'Medium'
+        ? 'background:#fef9c3;color:#ca8a04'
+        : 'background:#f1f5f9;color:#64748b';
+    return `<span class="popup-badge" style="${cls}">${priority || 'Low'} Priority</span>`;
+  }
+  function statusBadge(status) {
+    const cls = status === 'Resolved'
+      ? 'background:#dcfce7;color:#16a34a'
+      : status === 'Verified'
+        ? 'background:#d1fae5;color:#065f46'
+        : status === 'In Progress'
+          ? 'background:#dbeafe;color:#2563eb'
+          : 'background:#fef3c7;color:#d97706';
+    return `<span class="popup-badge" style="${cls}">${status || 'Pending'}</span>`;
+  }
+  function catBadge(issueType) {
+    const color = catColor(issueType);
+    const bg = color + '22'; // 13% opacity hex
+    return `<span class="popup-cat" style="background:${bg};color:${color}">${issueType || 'Other'}</span>`;
+  }
+  function sidebarCatBadge(issueType) {
+    const color = catColor(issueType);
+    const bg = color + '22';
+    return `<span class="cat-badge" style="background:${bg};color:${color}">${issueType || 'Other'}</span>`;
+  }
+
+  // ── Init Leaflet ──────────────────────────────────────────────────────────
+  const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let allIssues   = [];
+  let markerMap   = {}; // id → L.Marker
+  let activeFilter = 'all';
+  let activeCardId = null;
+
+  // ── Fetch issues ──────────────────────────────────────────────────────────
+  async function loadIssues() {
+    try {
+      const token = localStorage.getItem('ch_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch('/api/issues', { headers });
+      if (res.ok) {
+        allIssues = await res.json();
+      } else {
+        console.warn('Could not load issues (auth required?)', res.status);
+        allIssues = [];
+      }
+    } catch (e) {
+      console.error('Fetch issues error', e);
+      allIssues = [];
+    }
+    renderAll(activeFilter);
+    hideLoading();
+  }
+
+  function hideLoading() {
+    const ov = document.getElementById('loadingOverlay');
+    ov.style.opacity = '0';
+    setTimeout(() => ov.remove(), 400);
+  }
+
+  // ── Render everything ─────────────────────────────────────────────────────
+  function renderAll(filterCat) {
+    activeFilter = filterCat;
+
+    // Clear existing markers
+    Object.values(markerMap).forEach(m => map.removeLayer(m));
+    markerMap = {};
+
+    const filtered = filterCat === 'all'
+      ? allIssues
+      : allIssues.filter(i => i.issueType === filterCat);
+
+    // Stats
+    const mapped = filtered.filter(i => hasLatLng(i));
+    document.getElementById('statTotal').textContent  = filtered.length;
+    document.getElementById('statMapped').textContent = mapped.length;
+    document.getElementById('statHigh').textContent   =
+      filtered.filter(i => i.priority === 'High').length;
+
+    // Sidebar list
+    renderSidebarList(filtered);
+
+    // Map pins
+    const bounds = [];
+    filtered.forEach(issue => {
+      const loc = issue.location || {};
+      const lat  = loc.lat  ?? (typeof issue.lat === 'number'  ? issue.lat  : null);
+      const lng  = loc.lng  ?? (typeof issue.lng === 'number'  ? issue.lng  : null);
+      if (!lat || !lng) return;
+
+      const color  = catColor(issue.issueType);
+      const marker = L.marker([lat, lng], { icon: makeIcon(color) });
+
+      const urls     = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []);
+      const thumbUrl = urls[0] || null;
+      const isVideo  = thumbUrl && /\.(mp4|mov|webm|avi)$/i.test(thumbUrl);
+
+      const thumbHtml = thumbUrl
+        ? (isVideo
+            ? `<video class="popup-thumb-video" src="${thumbUrl}" muted playsinline></video>`
+            : `<img class="popup-thumb" src="${thumbUrl}" alt="issue photo" />`)
+        : '';
+
+      const addr = loc.address || issue.address || '—';
+
+      marker.bindPopup(`
+        ${thumbHtml}
+        <div class="popup-inner">
+          ${catBadge(issue.issueType)}
+          <div class="popup-title">${issue.title || issue.description || 'Untitled Issue'}</div>
+          <div class="popup-row">
+            <span class="material-symbols-outlined">location_on</span>
+            ${addr}
+          </div>
+          <div class="popup-row">
+            <span class="material-symbols-outlined">person</span>
+            ${issue.name || issue.email || 'Anonymous'}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+            ${priorityBadge(issue.priority)}
+            ${statusBadge(issue.status)}
+          </div>
+        </div>
+      `, { maxWidth: 280 });
+
+      marker.addTo(map);
+      markerMap[issue.id] = marker;
+      bounds.push([lat, lng]);
+    });
+
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+    }
+  }
+
+  function hasLatLng(issue) {
+    const loc = issue.location || {};
+    return !!(loc.lat || issue.lat);
+  }
+
+  // ── Sidebar list ──────────────────────────────────────────────────────────
+  function formatTimeAgo(dateString) {
+    if (!dateString) return '';
+    const diff = Date.now() - new Date(dateString).getTime();
+    const hrs = Math.floor(diff / (1000 * 60 * 60));
+    if (hrs < 24) return hrs === 0 ? 'Just now' : `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function renderSidebarList(issues) {
+    const list = document.getElementById('issueList');
+    if (!issues.length) {
+      list.innerHTML = '<div class="sidebar-empty">No issues in this category.</div>';
+      return;
+    }
+    list.innerHTML = issues.map(issue => {
+      const hasGeo  = hasLatLng(issue);
+      const urls     = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []);
+      const thumbUrl = urls[0] || null;
+      const thumbHtml = thumbUrl
+        ? `<img class="thumb" src="${thumbUrl}" alt="" />`
+        : '';
+      return `
+        <div class="issue-card${issue.id === activeCardId ? ' active' : ''}"
+             data-id="${issue.id}" onclick="focusIssue('${issue.id}')">
+          ${thumbHtml}
+          ${sidebarCatBadge(issue.issueType)}
+          <h4>${issue.title || issue.description || 'Untitled'}</h4>
+          <div class="meta">
+            <span>${issue.priority || 'Low'} Priority</span>
+            <span>·</span>
+            <span>${formatTimeAgo(issue.createdAt)}</span>
+          </div>
+          ${!hasGeo ? '<div class="no-location-note">📍 No GPS location</div>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Focus issue ───────────────────────────────────────────────────────────
+  function focusIssue(id) {
+    activeCardId = id;
+    // Re-render sidebar to update active class
+    const filtered = activeFilter === 'all'
+      ? allIssues
+      : allIssues.filter(i => i.issueType === activeFilter);
+    renderSidebarList(filtered);
+
+    const marker = markerMap[id];
+    if (marker) {
+      map.flyTo(marker.getLatLng(), 15, { duration: 0.8 });
+      setTimeout(() => marker.openPopup(), 900);
+    }
+    // Mobile: close sidebar
+    if (window.innerWidth <= 768) {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  }
+
+  // ── Filter chips ──────────────────────────────────────────────────────────
+  document.getElementById('filterRow').addEventListener('click', e => {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeCardId = null;
+    renderAll(chip.dataset.cat);
+  });
+
+  // ── Mobile sidebar toggle ─────────────────────────────────────────────────
+  document.getElementById('mobileSidebarToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadIssues();
+</script>
+</body>
+</html>

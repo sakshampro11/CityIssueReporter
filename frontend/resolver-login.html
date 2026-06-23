@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resolver Login | Lokally</title>
+  <meta name="description" content="Resolver sign in portal." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body, html { font-family: 'Space Grotesk', sans-serif; }
+    .font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center font-space-grotesk">
+  <div class="flex w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100/80 p-10 flex-col justify-center">
+    <div class="mb-8 flex items-center gap-4">
+      <a href="landing.html" class="text-gray-600 hover:text-gray-800 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </a>
+      <a href="landing.html" class="text-4xl font-bold text-blue-600 hover:text-blue-700 transition flex items-center gap-1.5">
+        Lokally
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+      </a>
+    </div>
+
+    <h2 class="text-2xl font-bold mb-1 text-slate-800">Resolver Portal</h2>
+    <p class="text-slate-500 mb-6 text-sm">Sign in to manage and resolve community issues.</p>
+
+    <!-- Error / success banner -->
+    <div id="formBanner" class="hidden mb-4 px-4 py-3 rounded-xl text-xs font-semibold"></div>
+
+    <form id="resolverSigninForm" class="space-y-4">
+      <div>
+        <label class="block text-slate-700 mb-1 text-sm font-semibold" for="email">Resolver Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="resolver@lokally.com"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="block text-slate-700 mb-1 text-sm font-semibold" for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="••••••••"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+          required
+        />
+      </div>
+
+      <button
+        id="submitBtn"
+        type="submit"
+        class="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:from-blue-700 hover:to-blue-600 transition flex items-center justify-center gap-2"
+      >
+        Sign In as Resolver
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const formBanner = document.getElementById('formBanner');
+
+    function showBanner(message, type = 'error') {
+      formBanner.textContent = message;
+      formBanner.className = `mb-4 px-4 py-3 rounded-xl text-xs font-semibold ${
+        type === 'success'
+          ? 'bg-emerald-50 text-emerald-800 border border-emerald-100'
+          : 'bg-rose-50 text-rose-800 border border-rose-100'
+      }`;
+      formBanner.classList.remove('hidden');
+    }
+
+    document.getElementById('resolverSigninForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('submitBtn');
+
+      btn.disabled    = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        const res  = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          if (data.user.role !== 'resolver') {
+            showBanner('Access denied: Only Resolver accounts can access this portal.');
+            btn.disabled    = false;
+            btn.textContent = 'Sign In as Resolver';
+            return;
+          }
+
+          localStorage.setItem('ch_token', data.token);
+          localStorage.setItem('ch_user',  JSON.stringify(data.user));
+          showBanner('Access granted! Redirecting to dashboard…', 'success');
+          setTimeout(() => { window.location.href = 'resolver-dashboard.html'; }, 1000);
+        } else {
+          showBanner(data.message || 'Invalid email or password.');
+          btn.disabled    = false;
+          btn.textContent = 'Sign In as Resolver';
+        }
+      } catch (err) {
+        showBanner('Network error — is the server running?');
+        btn.disabled    = false;
+        btn.textContent = 'Sign In as Resolver';
+      }
+    });
+  </script>
+</body>
+</html>
