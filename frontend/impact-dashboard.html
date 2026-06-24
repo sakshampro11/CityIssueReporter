@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lokally – Impact Dashboard</title>
+  <meta name="description" content="Citywide civic impact statistics — issues reported, resolved, and community participation." />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body, html { font-family: 'Space Grotesk', sans-serif; }
+    .font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06); }
+    .hotspot-bar { transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-800">
+
+  <!-- Header -->
+  <nav class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100/80 px-6 sm:px-16 py-4 flex items-center justify-between shadow-sm shadow-slate-100/25">
+    <div class="flex items-center gap-4">
+      <a href="landing.html" class="text-3xl font-extrabold tracking-tight text-blue-600 font-space-grotesk flex items-center gap-1.5 hover:opacity-95 transition-opacity">
+        <span>Lokally</span><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+      </a>
+      <span class="hidden sm:block text-slate-300">|</span>
+      <span class="hidden sm:block text-sm font-bold text-slate-500">Impact Dashboard</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="map-view.html"
+        class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100">
+        <span class="material-symbols-outlined text-[18px]">map</span>
+        <span>Map View</span>
+      </a>
+      <a href="index.html"
+        class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all border border-transparent hover:border-blue-100">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        <span>Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 sm:px-16 py-10 sm:py-14">
+
+    <!-- Hero -->
+    <div class="mb-10">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold mb-4 tracking-wide uppercase">
+        <span class="material-symbols-outlined text-sm">public</span>
+        Citywide Impact
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-space-grotesk mb-2">
+        How Our Community Is Making a Difference
+      </h1>
+      <p class="text-slate-500 font-medium max-w-2xl">
+        Live aggregate statistics from every issue reported across the city. No individual data — just the collective progress we're building together.
+      </p>
+      <p id="lastUpdated" class="text-[11px] text-slate-400 font-semibold mt-3"></p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="flex flex-col items-center justify-center py-24 text-slate-400">
+      <div class="w-10 h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4" style="border-width:3px"></div>
+      <p class="text-sm font-semibold">Loading impact data from Firestore…</p>
+    </div>
+
+    <!-- Error -->
+    <div id="errorState" class="hidden bg-red-50 border border-red-100 rounded-2xl p-6 text-center">
+      <span class="material-symbols-outlined text-red-400 text-3xl mb-2">error</span>
+      <p class="text-red-700 font-bold text-sm" id="errorMessage">Failed to load stats.</p>
+      <button onclick="loadStats()" class="mt-3 text-xs font-bold text-red-600 hover:text-red-700 underline">Try again</button>
+    </div>
+
+    <!-- Dashboard content -->
+    <div id="dashboardContent" class="hidden space-y-8">
+
+      <!-- Empty state banner -->
+      <div id="emptyBanner" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-3">
+        <span class="material-symbols-outlined text-amber-500 mt-0.5">info</span>
+        <div>
+          <p class="font-bold text-amber-800 text-sm">Not enough data yet</p>
+          <p class="text-amber-700/80 text-xs font-medium mt-1">Start reporting issues in your neighbourhood — as more citizens participate, this dashboard will fill with real impact numbers.</p>
+        </div>
+      </div>
+
+      <!-- Row 1: Key metrics -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-lg">campaign</span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Issues Reported</span>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900" id="statTotalAllTime">—</div>
+          <div class="text-xs text-slate-500 font-semibold mt-1">
+            <span id="statTotalMonth">—</span> this month
+          </div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-lg">check_circle</span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Resolved This Month</span>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900" id="statResolvedMonth">—</div>
+          <div class="text-xs text-slate-500 font-semibold mt-1">
+            <span id="statResolvedAllTime">—</span> resolved all-time
+          </div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-lg">percent</span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Resolution Rate</span>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900" id="statResolutionRate">—</div>
+          <div class="text-xs text-slate-500 font-semibold mt-1">of all reported issues</div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-lg">schedule</span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Avg. Resolution Time</span>
+          </div>
+          <div class="text-3xl font-extrabold text-slate-900" id="statAvgResolution">—</div>
+          <div class="text-xs text-slate-500 font-semibold mt-1" id="statAvgResolutionSub">from report to resolved</div>
+        </div>
+      </div>
+
+      <!-- Row 2: Community verification -->
+      <div class="bg-gradient-to-r from-blue-600 to-blue-500 rounded-3xl p-6 sm:p-8 text-white shadow-lg shadow-blue-500/20">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="material-symbols-outlined text-blue-200">groups</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-blue-200">Community Verification Impact</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight font-space-grotesk" id="statConfirmations">—</h2>
+            <p class="text-blue-100 text-sm font-medium mt-2 max-w-lg">
+              Total community confirmations made by citizens verifying that issues are still happening in their neighbourhoods. Every confirmation helps prioritise what matters most.
+            </p>
+          </div>
+          <div class="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center">
+            <span class="material-symbols-outlined text-4xl sm:text-5xl text-white/80">verified_user</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-lg mb-1 font-space-grotesk">Issues by Category</h3>
+          <p class="text-xs text-slate-400 font-semibold mb-5">Distribution across issue types citywide</p>
+          <div class="relative h-64 sm:h-72">
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <p id="categoryEmpty" class="hidden text-center text-slate-400 text-xs font-semibold py-8">Not enough data yet</p>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 text-lg mb-1 font-space-grotesk">Issues by Status</h3>
+          <p class="text-xs text-slate-400 font-semibold mb-5">Current pipeline of reported issues</p>
+          <div class="relative h-64 sm:h-72">
+            <canvas id="statusChart"></canvas>
+          </div>
+          <p id="statusEmpty" class="hidden text-center text-slate-400 text-xs font-semibold py-8">Not enough data yet</p>
+        </div>
+      </div>
+
+      <!-- Row 4: Hotspots -->
+      <div class="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-lg font-space-grotesk">Issue Hotspots</h3>
+            <p class="text-xs text-slate-400 font-semibold mt-1">Areas with the most reported issues</p>
+          </div>
+          <a href="map-view.html"
+            class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 transition border border-blue-100">
+            <span class="material-symbols-outlined text-sm">map</span>
+            View on map
+          </a>
+        </div>
+        <div id="hotspotList" class="space-y-3"></div>
+        <p id="hotspotEmpty" class="hidden text-center text-slate-400 text-xs font-semibold py-8">
+          Not enough location data yet — issues need an address or area to appear here.
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const CATEGORIES = ['Pothole', 'Water', 'Electric', 'Waste', 'Streetlight', 'Sanitation', 'Road', 'Other'];
+    const STATUSES   = ['Reported', 'Verified', 'In Progress', 'Resolved'];
+
+    const CAT_COLORS = {
+      Pothole: '#f97316', Water: '#3b82f6', Electric: '#eab308', Waste: '#22c55e',
+      Streetlight: '#a855f7', Sanitation: '#14b8a6', Road: '#ef4444', Other: '#94a3b8',
+    };
+    const STATUS_COLORS = {
+      Reported: '#f59e0b', Verified: '#3b82f6', 'In Progress': '#8b5cf6', Resolved: '#10b981',
+    };
+
+    let categoryChart = null;
+    let statusChart   = null;
+
+    function formatDays(days) {
+      if (days < 1) return `${Math.round(days * 24)} hours`;
+      if (days < 2) return '1 day';
+      return `${days} days`;
+    }
+
+    function renderHotspots(areas) {
+      const list  = document.getElementById('hotspotList');
+      const empty = document.getElementById('hotspotEmpty');
+
+      if (!areas.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      const maxCount = areas[0].count;
+
+      list.innerHTML = areas.map((item, i) => {
+        const pct = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+        return `
+          <div class="flex items-center gap-4">
+            <span class="w-6 text-xs font-extrabold text-slate-400 text-right">${i + 1}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-baseline mb-1">
+                <span class="font-bold text-sm text-slate-800 truncate">${item.area}</span>
+                <span class="text-xs font-extrabold text-slate-500 ml-2 flex-shrink-0">${item.count} issue${item.count !== 1 ? 's' : ''}</span>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="hotspot-bar h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full" style="width:0%" data-width="${pct}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      requestAnimationFrame(() => {
+        list.querySelectorAll('.hotspot-bar').forEach(bar => {
+          bar.style.width = bar.dataset.width;
+        });
+      });
+    }
+
+    function buildChart(canvasId, labels, data, colors, type) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      const existing = canvasId === 'categoryChart' ? categoryChart : statusChart;
+      if (existing) existing.destroy();
+
+      const chart = new Chart(ctx, {
+        type: type,
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0,
+            borderRadius: type === 'bar' ? 6 : 0,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: type === 'doughnut',
+              position: type === 'doughnut' ? 'right' : 'bottom',
+              labels: { font: { family: 'Space Grotesk', weight: '600', size: 11 }, padding: 12, usePointStyle: true },
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleFont: { family: 'Space Grotesk', weight: '700' },
+              bodyFont: { family: 'Space Grotesk' },
+              padding: 10,
+              cornerRadius: 8,
+            },
+          },
+          scales: type === 'bar' ? {
+            x: { grid: { display: false }, ticks: { font: { family: 'Space Grotesk', size: 10 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk', size: 10 } }, grid: { color: '#f1f5f9' } },
+          } : {},
+        },
+      });
+
+      return chart;
+    }
+
+    function renderDashboard(data) {
+      const { hasData, totals, resolution, byCategory, byStatus, topAreas, community, generatedAt } = data;
+
+      document.getElementById('emptyBanner').classList.toggle('hidden', hasData);
+
+      // Totals
+      document.getElementById('statTotalAllTime').textContent = hasData ? totals.allTime.toLocaleString() : 'Not enough data yet';
+      document.getElementById('statTotalMonth').textContent = hasData
+        ? `${totals.thisMonth.toLocaleString()} reported`
+        : '—';
+
+      // Resolution this month
+      document.getElementById('statResolvedMonth').textContent = hasData
+        ? resolution.resolvedThisMonth.toLocaleString()
+        : 'Not enough data yet';
+      document.getElementById('statResolvedAllTime').textContent = hasData
+        ? `${resolution.resolvedAllTime.toLocaleString()} total`
+        : '—';
+
+      // Resolution rate
+      const rateEl = document.getElementById('statResolutionRate');
+      if (!hasData || !resolution.hasEnoughForRate) {
+        rateEl.textContent = 'Not enough data yet';
+      } else if (totals.allTime === 0) {
+        rateEl.textContent = 'Not enough data yet';
+      } else {
+        rateEl.textContent = `${resolution.resolutionRate}%`;
+      }
+
+      // Avg resolution time
+      const avgEl = document.getElementById('statAvgResolution');
+      const avgSub = document.getElementById('statAvgResolutionSub');
+      if (!resolution.hasEnoughForAvgTime) {
+        avgEl.textContent = 'Not enough data yet';
+        avgSub.textContent = 'needs at least one resolved issue';
+      } else {
+        avgEl.textContent = formatDays(resolution.avgResolutionDays);
+        avgSub.textContent = `across ${resolution.resolvedCountForAvg} resolved issue${resolution.resolvedCountForAvg !== 1 ? 's' : ''}`;
+      }
+
+      // Community confirmations
+      document.getElementById('statConfirmations').textContent = hasData
+        ? `${community.totalConfirmations.toLocaleString()} confirmations`
+        : 'Not enough data yet';
+
+      // Last updated
+      if (generatedAt) {
+        const d = new Date(generatedAt);
+        document.getElementById('lastUpdated').textContent =
+          `Last updated ${d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`;
+      }
+
+      // Category chart
+      const catLabels = CATEGORIES;
+      const catData   = catLabels.map(c => byCategory[c] || 0);
+      const catHasData = catData.some(v => v > 0);
+      document.getElementById('categoryChart').parentElement.classList.toggle('hidden', !catHasData);
+      document.getElementById('categoryEmpty').classList.toggle('hidden', catHasData);
+      if (catHasData) {
+        categoryChart = buildChart(
+          'categoryChart',
+          catLabels,
+          catData,
+          catLabels.map(c => CAT_COLORS[c]),
+          'bar'
+        );
+      }
+
+      // Status chart
+      const statusLabels = STATUSES;
+      const statusData   = statusLabels.map(s => byStatus[s] || 0);
+      const statusHasData = statusData.some(v => v > 0);
+      document.getElementById('statusChart').parentElement.classList.toggle('hidden', !statusHasData);
+      document.getElementById('statusEmpty').classList.toggle('hidden', statusHasData);
+      if (statusHasData) {
+        statusChart = buildChart(
+          'statusChart',
+          statusLabels,
+          statusData,
+          statusLabels.map(s => STATUS_COLORS[s]),
+          'doughnut'
+        );
+      }
+
+      // Hotspots
+      renderHotspots(topAreas || []);
+    }
+
+    async function loadStats() {
+      const loading   = document.getElementById('loadingState');
+      const error     = document.getElementById('errorState');
+      const content   = document.getElementById('dashboardContent');
+
+      loading.classList.remove('hidden');
+      error.classList.add('hidden');
+      content.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/stats/impact');
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const data = await res.json();
+        renderDashboard(data);
+        loading.classList.add('hidden');
+        content.classList.remove('hidden');
+      } catch (err) {
+        console.error('Failed to load impact stats:', err);
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        document.getElementById('errorMessage').textContent =
+          err.message || 'Failed to load impact statistics. Please try again.';
+      }
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>

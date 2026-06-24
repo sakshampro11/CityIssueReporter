@@ -26,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));
+app.use('/api/stats',          require('./routes/stats'));
 app.use('/api/issues/analyze', require('./routes/analyze'));
 app.use('/api/issues',         require('./routes/issues'));
 

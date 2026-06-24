@@ -1,10 +1,21 @@
 const express           = require('express');
 const { db }            = require('../config/firestore');
 const authenticateToken = require('../middleware/auth');
+const multer            = require('multer');
 const upload            = require('../middleware/upload');
 const { saveFile }      = require('../services/storage');
 
 const router = express.Router();
+
+// Helper: run multer as a promise so we can catch its errors inside try/catch
+function runUpload(req, res, handler) {
+  return new Promise((resolve, reject) => {
+    handler(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
 
 // ── POST /api/issues — submit a new issue (public, no auth required) ─────────
 // Accepts up to 5 files via the `media` field (multipart/form-data).
@@ -203,8 +214,21 @@ router.post('/:id/confirm', authenticateToken, async (req, res) => {
 });
 
 // ── PUT /api/issues/:id/status — update status (Resolvers only) ─────────────────
-router.put('/:id/status', authenticateToken, upload.array('media', 5), async (req, res) => {
+router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
+    // Parse multipart/form-data with multer (catches file-type and size errors)
+    try {
+      await runUpload(req, res, upload.array('media', 5));
+    } catch (uploadErr) {
+      const isMulterError = uploadErr instanceof multer.MulterError;
+      const status = isMulterError && uploadErr.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+      return res.status(status).json({
+        message: isMulterError
+          ? uploadErr.message
+          : `File rejected: ${uploadErr.message}`
+      });
+    }
+
     const { status, note } = req.body;
     if (!status || !note) {
       return res.status(400).json({ message: 'Status and note are required' });

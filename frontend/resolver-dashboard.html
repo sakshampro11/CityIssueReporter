@@ -37,14 +37,28 @@
 
   <!-- Dashboard Content -->
   <main class="max-w-4xl mx-auto px-6 mt-10">
-    <div class="flex justify-between items-center mb-8">
+    <!-- Header + Tab switcher -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
       <div>
-        <h1 class="text-2xl font-extrabold text-slate-800 font-space-grotesk">Open Concerns</h1>
-        <p class="text-sm text-slate-500 mt-1">Review reported problems and log status history updates.</p>
+        <h1 class="text-2xl font-extrabold text-slate-800 font-space-grotesk" id="dashHeading">Open Concerns</h1>
+        <p class="text-sm text-slate-500 mt-1" id="dashSubtitle">Review reported problems and log status history updates.</p>
       </div>
-      <div class="text-right">
-        <span class="text-xs font-extrabold text-slate-400 uppercase tracking-widest block">Active Issues</span>
-        <span id="issueCount" class="text-3xl font-extrabold text-blue-600">0</span>
+      <div class="flex flex-col items-end gap-3">
+        <div>
+          <span class="text-xs font-extrabold text-slate-400 uppercase tracking-widest block text-right" id="countLabel">Active Issues</span>
+          <span id="issueCount" class="text-3xl font-extrabold text-blue-600 block text-right">0</span>
+        </div>
+        <!-- Tab Toggle -->
+        <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+          <button id="tabOpen" onclick="switchTab('open')"
+            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm">
+            Open Issues
+          </button>
+          <button id="tabResolved" onclick="switchTab('resolved')"
+            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
+            Resolved
+          </button>
+        </div>
       </div>
     </div>
 
@@ -80,6 +94,36 @@
       document.getElementById('resolverName').textContent = user.name || 'Resolver';
     }
 
+    // ── Tab State & Switching ───────────────────────────────────────────────
+    let currentTab = 'open';
+    let openIssues = [];
+    let resolvedIssues = [];
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const openBtn     = document.getElementById('tabOpen');
+      const resolvedBtn = document.getElementById('tabResolved');
+      const heading     = document.getElementById('dashHeading');
+      const subtitle    = document.getElementById('dashSubtitle');
+      const countLabel  = document.getElementById('countLabel');
+
+      if (tab === 'open') {
+        openBtn.className     = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm';
+        resolvedBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-500 hover:text-slate-700';
+        heading.textContent   = 'Open Concerns';
+        subtitle.textContent  = 'Review reported problems and log status history updates.';
+        countLabel.textContent = 'Active Issues';
+        renderOpenIssues();
+      } else {
+        openBtn.className     = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-500 hover:text-slate-700';
+        resolvedBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-emerald-600 shadow-sm';
+        heading.textContent   = 'Resolved Concerns';
+        subtitle.textContent  = 'Audit of resolved issues with resolution notes and uploaded proof.';
+        countLabel.textContent = 'Resolved';
+        renderResolvedIssues();
+      }
+    }
+
     function handleLogout() {
       localStorage.removeItem('ch_token');
       localStorage.removeItem('ch_user');
@@ -87,8 +131,6 @@
     }
 
     // ── Load & Render Issues ────────────────────────────────────────────────
-    let openIssues = [];
-
     async function loadIssues() {
       try {
         const res = await fetch('/api/issues', {
@@ -97,9 +139,10 @@
         
         if (res.ok) {
           const all = await res.json();
-          // Filter out resolved issues for the resolver dashboard
-          openIssues = all.filter(issue => issue.status !== 'Resolved');
-          renderIssues();
+          openIssues     = all.filter(issue => issue.status !== 'Resolved');
+          resolvedIssues = all.filter(issue => issue.status === 'Resolved');
+          if (currentTab === 'open') renderOpenIssues();
+          else renderResolvedIssues();
         } else {
           toast('Failed to load issues', false);
           if (res.status === 401 || res.status === 403) {
@@ -112,7 +155,7 @@
       }
     }
 
-    function renderIssues() {
+    function renderOpenIssues() {
       const feed = document.getElementById('issuesFeed');
       document.getElementById('issueCount').textContent = openIssues.length;
 
@@ -126,7 +169,112 @@
         return;
       }
 
-      feed.innerHTML = openIssues.map(issue => {
+      feed.innerHTML = openIssues.map(issue => renderOpenCard(issue)).join('');
+    }
+
+    function renderResolvedIssues() {
+      const feed = document.getElementById('issuesFeed');
+      document.getElementById('issueCount').textContent = resolvedIssues.length;
+
+      if (resolvedIssues.length === 0) {
+        feed.innerHTML = `
+          <div class="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 font-semibold shadow-sm">
+            <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">inbox</span>
+            No resolved issues yet.
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = resolvedIssues.map(issue => {
+        const reporter = issue.name || issue.user || 'Anonymous';
+        const dateStr = new Date(issue.createdAt).toLocaleDateString(undefined, {
+          month: 'short', day: 'numeric', year: 'numeric'
+        });
+        const proof = issue.resolutionProof || {};
+        const proofUrls = proof.mediaUrls || [];
+        const proofNote = proof.note || '';
+
+        // Find the 'Resolved' entry in statusHistory for exact timestamp
+        const history = issue.statusHistory || [];
+        const resolvedEntry = [...history].reverse().find(h => h.status === 'Resolved');
+        const resolvedAt = resolvedEntry
+          ? new Date(resolvedEntry.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '—';
+
+        const proofMediaHtml = proofUrls.length > 0
+          ? `<div class="flex gap-2 flex-wrap mt-3">
+              ${proofUrls.map(url => {
+                const isVid = /\.(mp4|mov|webm|avi)$/i.test(url);
+                return isVid
+                  ? `<video src="${url}" controls class="h-24 w-36 object-cover rounded-xl border border-slate-200 shadow-sm"></video>`
+                  : `<img src="${url}" alt="proof" class="h-24 w-36 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-90 transition" onclick="this.classList.toggle('w-36'); this.classList.toggle('h-24'); this.classList.toggle('w-full'); this.classList.toggle('h-auto');" />`;
+              }).join('')}
+             </div>`
+          : '<p class="text-xs text-slate-400 font-semibold mt-2 italic">No media proof uploaded.</p>';
+
+        const urls = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []);
+        const thumbUrl = urls[0] || null;
+        const isVideo = thumbUrl && /\.(mp4|mov|webm|avi)$/i.test(thumbUrl);
+        const mediaHtml = thumbUrl
+          ? (isVideo
+            ? `<video src="${thumbUrl}" class="w-full h-28 object-cover rounded-xl mt-3" muted playsinline></video>`
+            : `<img src="${thumbUrl}" alt="media" class="w-full h-28 object-cover rounded-xl mt-3" />`)
+          : '';
+
+        return `
+          <div class="bg-white rounded-3xl border border-emerald-100 p-6 shadow-sm flex flex-col gap-5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="bg-blue-50 text-blue-600 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-blue-100">${issue.issueType || 'General'}</span>
+              <span class="px-2 py-0.5 rounded border text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-600 border-emerald-100 inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">check_circle</span>Resolved
+              </span>
+              <span class="text-xs text-slate-400 font-bold ml-auto">Reported ${dateStr}</span>
+            </div>
+
+            <div>
+              <h3 class="font-extrabold text-xl text-slate-800 leading-snug tracking-tight">${issue.title || 'Untitled Issue'}</h3>
+              <p class="text-xs text-slate-400 font-bold mt-1">📍 ${issue.address || '—'} &bull; Reported by ${reporter}</p>
+              <p class="text-sm text-slate-500 mt-2 font-medium leading-relaxed">${issue.description || ''}</p>
+              ${mediaHtml}
+            </div>
+
+            <!-- Resolution Proof Block -->
+            <div class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-emerald-500 text-lg">verified</span>
+                <span class="font-extrabold text-xs text-emerald-700 uppercase tracking-wider">Resolution Proof</span>
+                <span class="text-[10px] text-slate-400 font-bold ml-auto">Resolved ${resolvedAt}</span>
+              </div>
+              ${proofNote
+                ? `<p class="text-sm text-slate-700 font-medium leading-relaxed">${proofNote}</p>`
+                : '<p class="text-xs text-slate-400 italic">No resolution note provided.</p>'}
+              ${proofMediaHtml}
+            </div>
+
+            <!-- Comments Summary -->
+            ${(issue.commentsList || []).length > 0 ? `
+            <div class="border-t border-slate-100 pt-4">
+              <h4 class="font-extrabold text-xs text-slate-700 uppercase tracking-wider mb-3">Comments (${issue.comments || 0})</h4>
+              <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+                ${(issue.commentsList || []).map(c => {
+                  const isRes = c.role === 'resolver';
+                  return `<div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100/80 text-xs">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-extrabold text-slate-800">${c.username}</span>
+                      ${isRes ? '<span class="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">Resolver</span>' : '<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">Citizen</span>'}
+                    </div>
+                    <p class="text-slate-600 font-medium">${c.text}</p>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderOpenCard(issue) {
         const reporter = issue.name || issue.user || 'Anonymous';
         const dateStr = new Date(issue.createdAt).toLocaleDateString(undefined, {
           month: 'short',
@@ -226,8 +374,9 @@
             </div>
           </div>
         `;
-      }).join('');
     }
+
+
 
     function getStatusBadge(status) {
       const cls = status === 'Resolved'

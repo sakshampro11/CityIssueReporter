@@ -111,6 +111,14 @@
         const data = await res.json();
 
         if (res.ok) {
+          if (data.user.role === 'resolver') {
+            showBanner('Access denied: Please sign in through the Resolver Portal.');
+            btn.disabled    = false;
+            btn.textContent = 'Sign in';
+            localStorage.removeItem('ch_token');
+            localStorage.removeItem('ch_user');
+            return;
+          }
           localStorage.setItem('ch_token', data.token);
           localStorage.setItem('ch_user',  JSON.stringify(data.user));
           showBanner('Login successful! Redirecting…', 'success');

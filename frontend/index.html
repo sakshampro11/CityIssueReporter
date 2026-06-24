@@ -309,6 +309,12 @@
         <span class="material-symbols-outlined text-[18px]">map</span>
         <span>Map View</span>
       </a>
+      <a href="impact-dashboard.html"
+        class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-100"
+        title="Citywide impact statistics">
+        <span class="material-symbols-outlined text-[18px]">analytics</span>
+        <span>Impact</span>
+      </a>
       <!-- Profile -->
       <div class="relative">
         <button id="profileBtn"
@@ -432,7 +438,7 @@
           class="w-20 h-20 rounded-2xl border-4 border-white shadow-md -mt-10 ml-6 object-cover" />
         <div class="text-left w-full px-6 pb-6 pt-3">
           <div id="profileName" class="font-extrabold text-xl text-slate-900 mb-1 leading-snug">Community Member</div>
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-2">Verified Citizen</span>
+          <span id="profileBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-2">Verified Citizen</span>
           <div id="profileEmail" class="text-slate-400 text-xs font-medium"></div>
         </div>
       </div>
@@ -835,7 +841,9 @@
                     <span class="material-symbols-outlined text-sm">arrow_upward</span>
                     <span class="upvote-count">${c.upvotes || 0}</span>
                   </button>
-                  <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-600 font-bold text-xs hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition duration-200 border border-slate-100">
+                  <button onclick="openDetailModal('${c.id}', { focusComments: true })"
+                    class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-50 text-slate-600 font-bold text-xs hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition duration-200 border border-slate-100"
+                    aria-label="View comments">
                     <span class="material-symbols-outlined text-sm">chat_bubble</span>
                     <span>${c.comments || 0}</span>
                   </button>
@@ -870,7 +878,7 @@
               </div>
               <div class="flex flex-col items-end justify-between gap-4">
                 ${thumbHtml}
-                <button onclick="openDetailModal(${cardData})" class="text-blue-600 font-bold text-xs hover:text-blue-700 transition flex items-center gap-1 mt-auto">
+                <button onclick="openDetailModal('${c.id}')" class="text-blue-600 font-bold text-xs hover:text-blue-700 transition flex items-center gap-1 mt-auto">
                   <span>View details</span>
                   <span class="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
@@ -942,8 +950,23 @@
     }
 
     // ── Issue detail modal ─────────────────────────────────────────────────
-    function openDetailModal(issue) {
-      const statuses = issue.status || [];
+    async function openDetailModal(issueOrId, options = {}) {
+      // Always fetch fresh data from the server so resolver comments/status are current
+      let issue = (typeof issueOrId === 'string') ? null : issueOrId;
+      const issueId = issue ? issue.id : issueOrId;
+      try {
+        const token = localStorage.getItem('ch_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const freshRes = await fetch(`/api/issues/${issueId}`, { headers });
+        if (freshRes.ok) {
+          issue = await freshRes.json();
+          // Also update the local cache so card counts stay in sync
+          const idx = allIssues.findIndex(i => i.id === issue.id);
+          if (idx !== -1) allIssues[idx] = issue;
+        }
+      } catch (_) { /* fall back to snapshot data */ }
+
       const urls = issue.mediaUrls || (issue.mediaUrl ? [issue.mediaUrl] : []) || [];
 
       document.getElementById('detailTitle').textContent =
@@ -1108,6 +1131,13 @@
 
       document.getElementById('issueDetailModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+
+      if (options.focusComments) {
+        requestAnimationFrame(() => {
+          document.getElementById('detailCommentsSection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          document.getElementById('detailCommentInput')?.focus();
+        });
+      }
     }
 
     function toggleExpandMedia(el) {
@@ -1152,7 +1182,7 @@
           await fetchIssues(); // Refetches all issues
           const updated = allIssues.find(i => i.id === issueId);
           if (updated) {
-            openDetailModal(updated);
+            openDetailModal(updated, { focusComments: true });
           }
         } else {
           const data = await res.json();
@@ -1252,6 +1282,18 @@
       // Sidebar profile
       if (user.name) document.getElementById('profileName').textContent = user.name;
       if (user.email) document.getElementById('profileEmail').textContent = user.email;
+      
+      const badge = document.getElementById('profileBadge');
+      if (badge) {
+        if (user.role === 'resolver') {
+          badge.textContent = 'Verified Resolver';
+          badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold mb-2 border border-emerald-100';
+        } else {
+          badge.textContent = 'Verified Citizen';
+          badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-2';
+        }
+      }
+
       // Header profile
       if (user.name) document.getElementById('headerProfileName').textContent = user.name;
       if (user.email) document.getElementById('headerProfileEmail').textContent = user.email;
