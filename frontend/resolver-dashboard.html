@@ -53,39 +53,96 @@
   </nav>
 
   <!-- Dashboard Content -->
-  <main class="max-w-4xl mx-auto px-6 mt-10">
-    <!-- Header + Tab switcher -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
-      <div>
-        <h1 class="text-2xl font-extrabold text-slate-800 font-space-grotesk" id="dashHeading">Open Concerns</h1>
-        <p class="text-sm text-slate-500 mt-1" id="dashSubtitle">Review reported problems and log status history updates.</p>
-      </div>
-      <div class="flex flex-col items-end gap-3">
-        <div>
-          <span class="text-xs font-extrabold text-slate-400 uppercase tracking-widest block text-right" id="countLabel">Active Issues</span>
-          <span id="issueCount" class="text-3xl font-extrabold text-blue-600 block text-right">0</span>
+  <main class="max-w-7xl mx-auto px-6 mt-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Left Column: Issues list and switcher -->
+      <div class="lg:col-span-8 flex flex-col gap-6">
+        <!-- Header + Tab switcher -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-2 bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+          <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 font-space-grotesk" id="dashHeading">Open Concerns</h1>
+            <p class="text-sm text-slate-500 mt-1" id="dashSubtitle">Review reported problems and log status history updates.</p>
+          </div>
+          <div class="flex flex-col items-end gap-3">
+            <div>
+              <span class="text-xs font-extrabold text-slate-400 uppercase tracking-widest block text-right" id="countLabel">Active Issues</span>
+              <span id="issueCount" class="text-3xl font-extrabold text-blue-600 block text-right">0</span>
+            </div>
+            <!-- Tab Toggle -->
+            <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+              <button id="tabOpen" onclick="switchTab('open')"
+                class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm">
+                Open Issues
+              </button>
+              <button id="tabResolved" onclick="switchTab('resolved')"
+                class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
+                Resolved
+              </button>
+            </div>
+          </div>
         </div>
-        <!-- Tab Toggle -->
-        <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
-          <button id="tabOpen" onclick="switchTab('open')"
-            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm">
-            Open Issues
-          </button>
-          <button id="tabResolved" onclick="switchTab('resolved')"
-            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
-            Resolved
-          </button>
+
+        <!-- Issues Feed -->
+        <div id="issuesFeed" class="space-y-6">
+          <div class="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 font-medium shadow-sm">
+            Loading issues...
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Resolver Leaderboard moved to dedicated tab -->
+      <!-- Right Column: Sidebar with Profile Card -->
+      <div class="lg:col-span-4 flex flex-col gap-6">
+        <!-- Resolver Profile Card -->
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col items-start hover:shadow-md transition-all duration-300">
+          <div class="w-full h-24 bg-gradient-to-r from-slate-700 to-slate-900 border-b border-slate-200/50"></div>
+          <div class="w-20 h-20 rounded-2xl border-4 border-white shadow-md -mt-10 ml-6 bg-slate-150 flex items-center justify-center text-slate-600 font-extrabold text-2xl select-none" id="avatarFallback">
+            R
+          </div>
+          <div class="text-left w-full px-6 pb-6 pt-3">
+            <div id="profileName" class="font-extrabold text-xl text-slate-950 mb-1 leading-snug">Resolver</div>
+            
+            <!-- Verified Resolver Badge styled as in comments -->
+            <span class="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded inline-flex items-center gap-0.5 mb-2.5">
+              <span class="material-symbols-outlined text-[12px] font-bold">verified</span>
+              Verified Resolver
+            </span>
 
-    <!-- Issues Feed -->
-    <div id="issuesFeed" class="space-y-6">
-      <!-- Issues cards will be dynamically injected here -->
-      <div class="bg-white rounded-3xl border border-slate-100 p-12 text-center text-slate-400 font-medium shadow-sm">
-        Loading issues...
+            <div id="profileEmail" class="text-slate-400 text-xs font-medium truncate">resolver@lokally.com</div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 w-full">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Resolved</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-slate-100 text-slate-750 text-xs font-extrabold" id="profileResolvedCount">
+                  0
+                </span>
+              </div>
+              <div class="mt-3">
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Operational Badges</span>
+                <div id="profileBadges" class="flex flex-wrap gap-1.5">
+                  <span class="text-[11px] text-slate-400 font-semibold italic">No badges earned yet</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Operational Links -->
+            <div class="mt-4 pt-4 border-t border-slate-100 w-full space-y-2">
+              <a href="leaderboard-resolver.html" class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-600 hover:text-blue-600 transition-all duration-200">
+                <span class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">military_tech</span>
+                  Resolver Leaderboard
+                </span>
+                <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+              </a>
+              <button onclick="switchTab('resolved'); window.scrollTo({top: 0, behavior: 'smooth'});" class="flex items-center justify-between w-full p-2 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-600 hover:text-blue-600 transition-all duration-200 text-left cursor-pointer">
+                <span class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">history</span>
+                  Resolved Concerns Log
+                </span>
+                <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -491,6 +548,7 @@
         if (res.ok) {
           toast('Issue status updated successfully! ✓');
           await loadIssues(); // Re-fetch list
+          await loadResolverProfile(); // Re-fetch stats/badges
         } else {
           const data = await res.json();
           toast(data.message || 'Failed to update issue status', false);
@@ -505,7 +563,47 @@
       }
     }
 
+    async function loadResolverProfile() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const profile = await res.json();
+          const name = profile.name || 'Resolver';
+          document.getElementById('profileName').textContent = name;
+          document.getElementById('avatarFallback').textContent = name.substring(0, 1).toUpperCase();
+          document.getElementById('profileEmail').textContent = profile.email || 'resolver@lokally.com';
+          document.getElementById('profileResolvedCount').textContent = profile.resolverIssuesResolved || 0;
+
+          // Render badges
+          const badgesEl = document.getElementById('profileBadges');
+          const badges = profile.badges || [];
+          const resolverBadges = badges.filter(badge =>
+            ['5 Issues Resolved', '10 Issues Resolved', '25 Issues Resolved'].includes(badge)
+          );
+
+          if (resolverBadges.length > 0) {
+            const resolverBadgeStyle = {
+              '5 Issues Resolved': 'bg-blue-50 text-blue-700 border-blue-100',
+              '10 Issues Resolved': 'bg-amber-50 text-amber-700 border-amber-100',
+              '25 Issues Resolved': 'bg-emerald-50 text-emerald-700 border-emerald-100'
+            };
+            badgesEl.innerHTML = resolverBadges.map(badge => {
+              const theme = resolverBadgeStyle[badge] || 'bg-slate-50 text-slate-700 border-slate-100';
+              return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${theme}">${badge}</span>`;
+            }).join('');
+          } else {
+            badgesEl.innerHTML = '<span class="text-[11px] text-slate-400 font-semibold italic">No badges earned yet</span>';
+          }
+        }
+      } catch (err) {
+        console.error('Error loading resolver profile:', err);
+      }
+    }
+
     loadIssues();
+    loadResolverProfile();
   </script>
 </body>
 </html>
