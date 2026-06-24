@@ -315,50 +315,28 @@
         <span class="material-symbols-outlined text-[18px]">analytics</span>
         <span>Impact</span>
       </a>
-      <!-- Profile -->
-      <div class="relative">
-        <button id="profileBtn"
-          class="hover:bg-slate-50 hover:text-blue-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center">
-          <span class="material-symbols-outlined text-[22px]">person</span>
-        </button>
-        <div id="profilePopup"
-          class="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50 p-5 text-sm text-slate-700">
-          <div class="font-bold text-lg mb-1 text-slate-900" id="headerProfileName">Community Member</div>
-          <div class="text-slate-400 mb-3 text-xs" id="headerProfileEmail">No email</div>
-          <hr class="my-3 border-slate-100" />
-          <div class="mb-2 flex items-center gap-2"><span class="material-symbols-outlined text-slate-400 text-sm">phone</span><span id="headerProfilePhone">—</span></div>
-          <div class="flex items-start gap-2"><span class="material-symbols-outlined text-slate-400 text-sm mt-0.5">location_on</span><span id="headerProfileAddress" class="leading-relaxed">—</span></div>
-        </div>
-      </div>
+      <a href="leaderboard-citizens.html"
+        class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-100"
+        title="Citizen leaderboard">
+        <span class="material-symbols-outlined text-[18px]">military_tech</span>
+        <span>Leaderboard</span>
+      </a>
       <!-- Notifications -->
       <div class="relative">
         <button id="notificationsBtn"
           class="hover:bg-slate-50 hover:text-blue-600 rounded-full p-2.5 transition-all duration-200 border border-transparent hover:border-slate-100 flex items-center justify-center relative">
           <span class="material-symbols-outlined text-[22px]">notifications</span>
-          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+          <span id="notificationsDot" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white hidden"></span>
         </button>
         <div id="notificationsPopup"
           class="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50">
           <div class="py-1">
             <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
               <h3 class="text-sm font-bold text-slate-900">Notifications</h3>
-              <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">2 New</span>
+              <span id="notificationsCount" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold hidden">0 New</span>
             </div>
-            <div class="max-h-96 overflow-y-auto divide-y divide-slate-50">
-              <a href="#" class="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50/50 transition">
-                <span class="material-symbols-outlined text-blue-500 text-lg mt-0.5 bg-blue-50 p-1 rounded-lg">update</span>
-                <div class="flex-1">
-                  <p class="font-semibold text-slate-700 text-xs">Status updated on issue</p>
-                  <p class="text-[11px] text-slate-400 mt-0.5">2 minutes ago</p>
-                </div>
-              </a>
-              <a href="#" class="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50/50 transition">
-                <span class="material-symbols-outlined text-amber-500 text-lg mt-0.5 bg-amber-50 p-1 rounded-lg">arrow_upward</span>
-                <div class="flex-1">
-                  <p class="font-semibold text-slate-700 text-xs">Your issue got 359 upvotes</p>
-                  <p class="text-[11px] text-slate-400 mt-0.5">5 minutes ago</p>
-                </div>
-              </a>
+            <div id="notificationsList" class="max-h-96 overflow-y-auto divide-y divide-slate-50">
+              <div class="px-4 py-4 text-xs text-slate-400 font-semibold">No notifications yet.</div>
             </div>
           </div>
         </div>
@@ -370,19 +348,26 @@
           <span class="material-symbols-outlined text-[22px]">settings</span>
         </button>
         <div id="settingsPopup"
-          class="absolute right-0 mt-2 w-60 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50 py-2">
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
-            <span class="material-symbols-outlined text-slate-400 text-lg">person</span><span>Profile Settings</span>
-          </a>
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
-            <span class="material-symbols-outlined text-slate-400 text-lg">security</span><span>Security &amp; Login</span>
-          </a>
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
-            <span class="material-symbols-outlined text-slate-400 text-lg">privacy_tip</span><span>Privacy Controls</span>
-          </a>
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">
-            <span class="material-symbols-outlined text-slate-400 text-lg">help</span><span>Feedback &amp; Help</span>
-          </a>
+          class="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-100/80 border border-slate-100/90 transform scale-95 opacity-0 transition-all duration-200 origin-top-right pointer-events-none z-50 p-5">
+          <div class="mb-4">
+            <h3 class="text-sm font-bold text-slate-900">Profile Settings</h3>
+            <p class="text-[11px] text-slate-400 font-medium mt-1">Update the details shown on your citizen profile.</p>
+          </div>
+          <form id="settingsForm" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Name</label>
+              <input id="settingsName" type="text" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Phone</label>
+              <input id="settingsPhone" type="text" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Address</label>
+              <input id="settingsAddress" type="text" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500" />
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-md shadow-blue-600/10">Save Changes</button>
+          </form>
         </div>
       </div>
       <!-- Logout -->
@@ -440,6 +425,15 @@
           <div id="profileName" class="font-extrabold text-xl text-slate-900 mb-1 leading-snug">Community Member</div>
           <span id="profileBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-2">Verified Citizen</span>
           <div id="profileEmail" class="text-slate-400 text-xs font-medium"></div>
+          <div class="mt-4 pt-4 border-t border-slate-100">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Your Points</span>
+              <span id="profilePoints" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
+                <span class="material-symbols-outlined text-xs">stars</span>0
+              </span>
+            </div>
+            <div id="profileBadges" class="flex flex-wrap gap-2"></div>
+          </div>
         </div>
       </div>
 
@@ -713,6 +707,133 @@
     // Geolocation captured coords (set when the modal opens)
     let capturedLat = null;
     let capturedLng = null;
+    const BADGE_META = {
+      'First Report': { icon: 'flag', className: 'bg-blue-50 text-blue-700 border-blue-100' },
+      'Community Watcher': { icon: 'visibility', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+      'Problem Solver': { icon: 'construction', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    };
+
+    function renderCitizenGamification(user) {
+      const pointsEl = document.getElementById('profilePoints');
+      const badgesEl = document.getElementById('profileBadges');
+      if (!pointsEl || !badgesEl) return;
+
+      const points = Number.isFinite(user.points) ? user.points : 0;
+      pointsEl.innerHTML = `<span class="material-symbols-outlined text-xs">stars</span>${points}`;
+
+      const badges = Array.isArray(user.badges) ? user.badges : [];
+      if (!badges.length) {
+        badgesEl.innerHTML = `<span class="text-[11px] text-slate-400 font-semibold">No badges yet — start participating to earn them.</span>`;
+        return;
+      }
+
+      badgesEl.innerHTML = badges.map((badgeName) => {
+        const meta = BADGE_META[badgeName] || { icon: 'workspace_premium', className: 'bg-slate-50 text-slate-700 border-slate-100' };
+        return `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.className}">
+            <span class="material-symbols-outlined text-[12px]">${meta.icon}</span>${badgeName}
+          </span>`;
+      }).join('');
+    }
+
+    function escapeHtml(text = '') {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById('notificationsList');
+      const count = document.getElementById('notificationsCount');
+      const dot = document.getElementById('notificationsDot');
+      if (!list || !count || !dot) return;
+
+      let currentUser = {};
+      try {
+        currentUser = JSON.parse(localStorage.getItem('ch_user') || '{}');
+      } catch (_) { }
+
+      const email = currentUser.email || '';
+      const userId = currentUser.id || '';
+      const myIssues = allIssues.filter(issue => issue.email === email || issue.reporterId === userId);
+      const notifications = [];
+
+      myIssues.forEach(issue => {
+        const title = issue.title || issue.description || 'Your issue';
+
+        (issue.statusHistory || [])
+          .filter((entry, index) => index > 0)
+          .forEach(entry => {
+            notifications.push({
+              time: entry.timestamp,
+              icon: entry.status === 'Resolved' ? 'check_circle' : 'update',
+              iconClass: entry.status === 'Resolved' ? 'text-emerald-500 bg-emerald-50' : 'text-blue-500 bg-blue-50',
+              text: `Your issue "${title}" was marked ${entry.status}.`,
+              subtext: entry.note || 'Status updated.'
+            });
+          });
+
+        (issue.commentsList || [])
+          .filter(comment => comment.role === 'resolver')
+          .forEach(comment => {
+            notifications.push({
+              time: comment.timestamp,
+              icon: 'chat',
+              iconClass: 'text-amber-500 bg-amber-50',
+              text: `Resolver commented on "${title}".`,
+              subtext: comment.text
+            });
+          });
+      });
+
+      notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
+      const recent = notifications.slice(0, 8);
+
+      if (!recent.length) {
+        list.innerHTML = `<div class="px-4 py-4 text-xs text-slate-400 font-semibold">No notifications yet.</div>`;
+        count.classList.add('hidden');
+        dot.classList.add('hidden');
+        return;
+      }
+
+      count.textContent = `${recent.length} New`;
+      count.classList.remove('hidden');
+      dot.classList.remove('hidden');
+      list.innerHTML = recent.map(item => `
+        <div class="flex items-start gap-3 px-4 py-3 text-sm hover:bg-slate-50/50 transition">
+          <span class="material-symbols-outlined text-lg mt-0.5 p-1 rounded-lg ${item.iconClass}">${item.icon}</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-700 text-xs leading-relaxed">${escapeHtml(item.text)}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-2">${escapeHtml(item.subtext)}</p>
+            <p class="text-[10px] text-slate-400 mt-1 font-bold">${formatTimeAgo(item.time)}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function refreshCurrentUserProfile() {
+      const token = localStorage.getItem('ch_token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const user = await res.json();
+        localStorage.setItem('ch_user', JSON.stringify(user));
+        if (user.name) document.getElementById('profileName').textContent = user.name;
+        if (user.email) document.getElementById('profileEmail').textContent = user.email;
+        document.getElementById('settingsName').value = user.name || '';
+        document.getElementById('settingsPhone').value = user.phone || '';
+        document.getElementById('settingsAddress').value = user.address || '';
+        renderCitizenGamification(user);
+      } catch (err) {
+        console.error('Failed to refresh user profile:', err);
+      }
+    }
 
     async function fetchIssues() {
       try {
@@ -731,6 +852,7 @@
       }
       renderIssues(document.getElementById('urgencyFilter').value, document.getElementById('typeFilter').value);
       renderSidebars();
+      renderNotifications();
     }
 
     function formatTimeAgo(dateString) {
@@ -1251,6 +1373,7 @@
         if (res.ok) {
           toast(data.status === 'Verified' ? '✅ Issue verified by community!' : 'Confirmation recorded! ✓');
           await fetchIssues(); // Refetches all issues and updates UI
+          await refreshCurrentUserProfile();
           if (isFromModal) {
             // Find the updated issue and re-open modal to refresh detail action button and badges
             const updated = allIssues.find(i => i.id === issueId);
@@ -1294,12 +1417,14 @@
         }
       }
 
-      // Header profile
-      if (user.name) document.getElementById('headerProfileName').textContent = user.name;
-      if (user.email) document.getElementById('headerProfileEmail').textContent = user.email;
-      if (user.phone) document.getElementById('headerProfilePhone').textContent = user.phone;
-      if (user.address) document.getElementById('headerProfileAddress').textContent = user.address;
+      document.getElementById('settingsName').value = user.name || '';
+      document.getElementById('settingsPhone').value = user.phone || '';
+      document.getElementById('settingsAddress').value = user.address || '';
+      if ((user.role || 'citizen') !== 'resolver') {
+        renderCitizenGamification(user);
+      }
     } catch (_) { }
+    refreshCurrentUserProfile();
 
     // ── Logout Modal ───────────────────────────────────────────────────────
     document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -1312,6 +1437,48 @@
       localStorage.removeItem('ch_token');
       localStorage.removeItem('ch_user');
       window.location.href = 'landing.html';
+    });
+
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('ch_token');
+      if (!token) {
+        toast('Please log in again to update settings.', false);
+        return;
+      }
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch('/api/auth/me', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: document.getElementById('settingsName').value,
+            phone: document.getElementById('settingsPhone').value,
+            address: document.getElementById('settingsAddress').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to save settings');
+
+        localStorage.setItem('ch_user', JSON.stringify(data));
+        document.getElementById('profileName').textContent = data.name || 'Community Member';
+        document.getElementById('profileEmail').textContent = data.email || '';
+        renderCitizenGamification(data);
+        toast('Profile updated successfully! ✓');
+      } catch (err) {
+        toast(err.message || 'Failed to save settings', false);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
+      }
     });
 
     // ── Your Issues Popup ──────────────────────────────────────────────────
@@ -1521,6 +1688,10 @@
       fd.append('description', document.getElementById('description').value);
       const checkedPriority = document.querySelector('input[name="priority"]:checked');
       if (checkedPriority) fd.append('priority', checkedPriority.value);
+      try {
+        const user = JSON.parse(localStorage.getItem('ch_user') || '{}');
+        if (user.id) fd.append('reporterId', user.id);
+      } catch (_) { }
       selectedFiles.forEach(file => fd.append('media', file));
 
       const submitBtn = this.querySelector('button[type="submit"]');
@@ -1546,6 +1717,7 @@
           selectedFiles = [];
           renderPreview();
           fetchIssues();
+          await refreshCurrentUserProfile();
         } else {
           toast(data.message || 'Submission failed. Please try again.', false);
         }
@@ -1583,9 +1755,8 @@
         }
       });
     }
-    initPopupToggle('profileBtn', 'profilePopup', 'notificationsBtn', 'notificationsPopup');
     initPopupToggle('notificationsBtn', 'notificationsPopup', 'settingsBtn', 'settingsPopup');
-    initPopupToggle('settingsBtn', 'settingsPopup', 'profileBtn', 'profilePopup');
+    initPopupToggle('settingsBtn', 'settingsPopup', 'notificationsBtn', 'notificationsPopup');
   </script>
 </body>
 

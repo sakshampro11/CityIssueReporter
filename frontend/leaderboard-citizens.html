@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lokally – Citizen Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body, html { font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <nav class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100/80 px-6 sm:px-16 py-4 flex items-center justify-between shadow-sm shadow-slate-100/25">
+    <a href="landing.html" class="text-3xl font-extrabold tracking-tight text-blue-600 flex items-center gap-1.5">
+      <span>Lokally</span><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+    </a>
+    <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all">
+      <span class="material-symbols-outlined text-[18px]">arrow_back</span>Dashboard
+    </a>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-6 sm:px-16 py-12">
+    <div class="mb-8">
+      <div class="flex items-center gap-3">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Citizen Leaderboard</h1>
+        <button id="leaderboardInfoBtn" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50 transition-all" aria-label="Leaderboard info">
+          <span class="material-symbols-outlined text-[18px]">info</span>
+        </button>
+      </div>
+      <p class="text-slate-500 font-medium mt-2">Top community contributors by participation points. Resolver accounts are excluded.</p>
+    </div>
+
+    <div id="loadingState" class="text-center text-slate-400 py-12 font-semibold">Loading leaderboard...</div>
+    <div id="emptyState" class="hidden text-center text-slate-400 py-12 font-semibold">No citizen activity yet.</div>
+    <div id="errorState" class="hidden text-center text-rose-600 py-12 font-semibold">Unable to load leaderboard.</div>
+
+    <div id="leaderboardList" class="space-y-3"></div>
+  </main>
+
+  <div id="infoModal" class="hidden fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-xl max-w-lg w-full p-6 relative">
+      <button id="closeInfoModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <h2 class="text-xl font-extrabold text-slate-900 mb-4">How Points And Badges Work</h2>
+      <div class="space-y-4 text-sm text-slate-600 font-medium">
+        <div>
+          <p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Points</p>
+          <ul class="space-y-2">
+            <li><span class="font-bold text-slate-800">+5</span> for reporting a new issue</li>
+            <li><span class="font-bold text-slate-800">+2</span> for verifying someone else's issue</li>
+            <li><span class="font-bold text-slate-800">+10</span> bonus when one of your reported issues gets resolved</li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Badges</p>
+          <ul class="space-y-2">
+            <li><span class="font-bold text-slate-800">First Report</span> — report 1 issue</li>
+            <li><span class="font-bold text-slate-800">Community Watcher</span> — verify 5 issues</li>
+            <li><span class="font-bold text-slate-800">Problem Solver</span> — have 1 of your issues resolved</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BADGE_META = {
+      'First Report': { icon: 'flag', className: 'bg-blue-50 text-blue-700 border-blue-100' },
+      'Community Watcher': { icon: 'visibility', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+      'Problem Solver': { icon: 'construction', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    };
+
+    function rankBadge(rank) {
+      if (rank === 1) return 'bg-yellow-50 text-yellow-700 border-yellow-100';
+      if (rank === 2) return 'bg-slate-100 text-slate-700 border-slate-200';
+      if (rank === 3) return 'bg-orange-50 text-orange-700 border-orange-100';
+      return 'bg-white text-slate-500 border-slate-200';
+    }
+
+    function renderLeader(user, index) {
+      const rank = index + 1;
+      const badges = Array.isArray(user.badges) ? user.badges : [];
+      const badgesHtml = badges.length
+        ? badges.map((badge) => {
+            const meta = BADGE_META[badge] || { icon: 'workspace_premium', className: 'bg-slate-50 text-slate-700 border-slate-100' };
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.className}">
+              <span class="material-symbols-outlined text-[12px]">${meta.icon}</span>${badge}
+            </span>`;
+          }).join('')
+        : '<span class="text-[11px] text-slate-400 font-semibold">No badges yet</span>';
+
+      return `
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-sm flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl border flex items-center justify-center font-extrabold text-sm ${rankBadge(rank)}">${rank}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h3 class="font-bold text-slate-900 truncate">${user.name}</h3>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-xs font-bold">
+                <span class="material-symbols-outlined text-[14px]">stars</span>${user.points}
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-2">${badgesHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    async function loadLeaderboard() {
+      const loading = document.getElementById('loadingState');
+      const empty = document.getElementById('emptyState');
+      const error = document.getElementById('errorState');
+      const list = document.getElementById('leaderboardList');
+
+      loading.classList.remove('hidden');
+      empty.classList.add('hidden');
+      error.classList.add('hidden');
+      list.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/leaderboard');
+        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        const data = await res.json();
+        const leaders = data.leaders || [];
+        loading.classList.add('hidden');
+        if (!leaders.length) {
+          empty.classList.remove('hidden');
+          return;
+        }
+        list.innerHTML = leaders.map((u, i) => renderLeader(u, i)).join('');
+      } catch (e) {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+      }
+    }
+
+    const infoModal = document.getElementById('infoModal');
+    document.getElementById('leaderboardInfoBtn').addEventListener('click', () => infoModal.classList.remove('hidden'));
+    document.getElementById('closeInfoModal').addEventListener('click', () => infoModal.classList.add('hidden'));
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) infoModal.classList.add('hidden');
+    });
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>

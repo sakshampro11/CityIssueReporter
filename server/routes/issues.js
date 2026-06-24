@@ -6,6 +6,14 @@ const upload            = require('../middleware/upload');
 const { saveFile }      = require('../services/storage');
 
 const router = express.Router();
+const BADGES = {
+  FIRST_REPORT: 'First Report',
+  COMMUNITY_WATCHER: 'Community Watcher',
+  PROBLEM_SOLVER: 'Problem Solver',
+  RESOLVER_5: '5 Issues Resolved',
+  RESOLVER_10: '10 Issues Resolved',
+  RESOLVER_25: '25 Issues Resolved',
+};
 
 // Helper: run multer as a promise so we can catch its errors inside try/catch
 function runUpload(req, res, handler) {
@@ -14,6 +22,80 @@ function runUpload(req, res, handler) {
       if (err) reject(err);
       else resolve();
     });
+  });
+}
+
+function withGamificationDefaults(user = {}) {
+  return {
+    ...user,
+    points: Number.isFinite(user.points) ? user.points : 0,
+    badges: Array.isArray(user.badges) ? user.badges : [],
+    reportsCount: Number.isFinite(user.reportsCount) ? user.reportsCount : 0,
+    verificationsCount: Number.isFinite(user.verificationsCount) ? user.verificationsCount : 0,
+    resolvedReportsCount: Number.isFinite(user.resolvedReportsCount) ? user.resolvedReportsCount : 0,
+    resolverIssuesResolved: Number.isFinite(user.resolverIssuesResolved) ? user.resolverIssuesResolved : 0,
+  };
+}
+
+async function awardCitizenPointsAndBadges(userId, { pointsDelta = 0, reportDelta = 0, verificationDelta = 0, resolvedReportDelta = 0 } = {}) {
+  if (!userId) return;
+
+  const userRef = db.collection('users').doc(userId);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) return;
+
+  const userData = withGamificationDefaults(userDoc.data());
+  if (userData.role === 'resolver') return;
+
+  const next = {
+    points: userData.points + pointsDelta,
+    reportsCount: userData.reportsCount + reportDelta,
+    verificationsCount: userData.verificationsCount + verificationDelta,
+    resolvedReportsCount: userData.resolvedReportsCount + resolvedReportDelta,
+    badges: [...userData.badges],
+  };
+
+  if (next.reportsCount >= 1 && !next.badges.includes(BADGES.FIRST_REPORT)) {
+    next.badges.push(BADGES.FIRST_REPORT);
+  }
+  if (next.verificationsCount >= 5 && !next.badges.includes(BADGES.COMMUNITY_WATCHER)) {
+    next.badges.push(BADGES.COMMUNITY_WATCHER);
+  }
+  if (next.resolvedReportsCount >= 1 && !next.badges.includes(BADGES.PROBLEM_SOLVER)) {
+    next.badges.push(BADGES.PROBLEM_SOLVER);
+  }
+
+  await userRef.update({
+    points: next.points,
+    reportsCount: next.reportsCount,
+    verificationsCount: next.verificationsCount,
+    resolvedReportsCount: next.resolvedReportsCount,
+    badges: next.badges,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+async function awardResolverResolutionMilestones(userId) {
+  if (!userId) return;
+
+  const userRef = db.collection('users').doc(userId);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) return;
+
+  const userData = withGamificationDefaults(userDoc.data());
+  if (userData.role !== 'resolver') return;
+
+  const nextResolved = userData.resolverIssuesResolved + 1;
+  const nextBadges = [...userData.badges];
+
+  if (nextResolved >= 5 && !nextBadges.includes(BADGES.RESOLVER_5)) nextBadges.push(BADGES.RESOLVER_5);
+  if (nextResolved >= 10 && !nextBadges.includes(BADGES.RESOLVER_10)) nextBadges.push(BADGES.RESOLVER_10);
+  if (nextResolved >= 25 && !nextBadges.includes(BADGES.RESOLVER_25)) nextBadges.push(BADGES.RESOLVER_25);
+
+  await userRef.update({
+    resolverIssuesResolved: nextResolved,
+    badges: nextBadges,
+    updatedAt: new Date().toISOString(),
   });
 }
 
@@ -76,6 +158,13 @@ router.post('/', upload.array('media', 5), async (req, res) => {
 
     const docRef = await db.collection('issues').add(issueData);
     console.log('Issue saved successfully with ID:', docRef.id);
+
+    if (issueData.reporterId) {
+      await awardCitizenPointsAndBadges(issueData.reporterId, {
+        pointsDelta: 5,
+        reportDelta: 1,
+      });
+    }
 
     res.status(201).json({
       message: 'Issue submitted successfully',
@@ -174,6 +263,10 @@ router.post('/:id/confirm', authenticateToken, async (req, res) => {
     const data = doc.data();
     const confirmedBy = data.confirmedBy || [];
 
+    if (data.reporterId && data.reporterId === userId) {
+      return res.status(400).json({ message: 'You cannot confirm your own issue.' });
+    }
+
     // Prevent same user from confirming twice
     if (confirmedBy.includes(userId)) {
       return res.status(400).json({ message: 'You have already confirmed this issue.' });
@@ -204,6 +297,10 @@ router.post('/:id/confirm', authenticateToken, async (req, res) => {
     }
 
     await docRef.update(updates);
+    await awardCitizenPointsAndBadges(userId, {
+      pointsDelta: 2,
+      verificationDelta: 1,
+    });
 
     const updatedDoc = await docRef.get();
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
@@ -281,6 +378,18 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     }
 
     await docRef.update(updates);
+
+    const becameResolved = status === 'Resolved' && data.status !== 'Resolved';
+    if (becameResolved && data.reporterId) {
+      await awardCitizenPointsAndBadges(data.reporterId, {
+        pointsDelta: 10,
+        resolvedReportDelta: 1,
+      });
+    }
+    if (becameResolved) {
+      await awardResolverResolutionMilestones(req.user.userId);
+    }
+
     const updatedDoc = await docRef.get();
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (error) {

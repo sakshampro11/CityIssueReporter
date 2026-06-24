@@ -62,6 +62,18 @@
       </div>
     </div>
 
+    <section class="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm mb-8">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-800 font-space-grotesk">Resolver Leaderboard</h2>
+          <p class="text-xs text-slate-400 font-semibold mt-1">Internal ranking by issues resolved</p>
+        </div>
+      </div>
+      <div id="resolverLeaderboard" class="space-y-3">
+        <div class="text-sm text-slate-400 font-semibold">Loading resolver leaderboard...</div>
+      </div>
+    </section>
+
     <!-- Issues Feed -->
     <div id="issuesFeed" class="space-y-6">
       <!-- Issues cards will be dynamically injected here -->
@@ -98,6 +110,11 @@
     let currentTab = 'open';
     let openIssues = [];
     let resolvedIssues = [];
+    const RESOLVER_BADGE_META = {
+      '5 Issues Resolved': 'bg-blue-50 text-blue-700 border-blue-100',
+      '10 Issues Resolved': 'bg-amber-50 text-amber-700 border-amber-100',
+      '25 Issues Resolved': 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    };
 
     function switchTab(tab) {
       currentTab = tab;
@@ -152,6 +169,42 @@
       } catch (err) {
         console.error('Error fetching issues:', err);
         toast('Network error loading issues', false);
+      }
+    }
+
+    async function loadResolverLeaderboard() {
+      const wrap = document.getElementById('resolverLeaderboard');
+      try {
+        const res = await fetch('/api/resolver/leaderboard', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to load resolver leaderboard');
+        const data = await res.json();
+        const leaders = data.leaders || [];
+        if (!leaders.length) {
+          wrap.innerHTML = '<div class="text-sm text-slate-400 font-semibold">No resolver activity yet.</div>';
+          return;
+        }
+        wrap.innerHTML = leaders.map((leader, index) => {
+          const badges = (leader.badges || []).map((badge) =>
+            `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${RESOLVER_BADGE_META[badge] || 'bg-slate-50 text-slate-700 border-slate-100'}">${badge}</span>`
+          ).join('') || '<span class="text-[11px] text-slate-400 font-semibold">No badges yet</span>';
+          return `
+            <div class="flex items-start gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+              <div class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 font-extrabold text-sm flex items-center justify-center">${index + 1}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                  <span class="font-bold text-slate-800 truncate">${leader.name}</span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold">
+                    <span class="material-symbols-outlined text-[14px]">check_circle</span>${leader.issuesResolved}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">${badges}</div>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        wrap.innerHTML = '<div class="text-sm text-rose-500 font-semibold">Unable to load resolver leaderboard.</div>';
       }
     }
 
@@ -469,6 +522,7 @@
         if (res.ok) {
           toast('Issue status updated successfully! ✓');
           await loadIssues(); // Re-fetch list
+          await loadResolverLeaderboard();
         } else {
           const data = await res.json();
           toast(data.message || 'Failed to update issue status', false);
@@ -485,6 +539,7 @@
 
     // Init
     loadIssues();
+    loadResolverLeaderboard();
   </script>
 </body>
 </html>

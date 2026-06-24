@@ -27,6 +27,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/stats',          require('./routes/stats'));
+app.use('/api/leaderboard',    require('./routes/leaderboard'));
+app.use('/api/resolver',       require('./routes/resolver'));
 app.use('/api/issues/analyze', require('./routes/analyze'));
 app.use('/api/issues',         require('./routes/issues'));
 
@@ -59,11 +61,43 @@ app.listen(PORT, async () => {
         role: 'resolver',
         phone: '0000000000',
         address: 'HQ City Hall',
+        points: 0,
+        badges: [],
+        reportsCount: 0,
+        verificationsCount: 0,
+        resolvedReportsCount: 0,
+        resolverIssuesResolved: 0,
         createdAt: new Date().toISOString()
       });
       console.log('✅ Default resolver account seeded (resolver@lokally.com / resolverpassword)');
     } else {
       console.log('ℹ️ Resolver account already exists.');
+    }
+    // Backfill old users with gamification defaults.
+    const usersSnapshot = await db.collection('users').get();
+    const updates = usersSnapshot.docs
+      .filter(doc => {
+        const u = doc.data();
+        return (
+          u.points === undefined ||
+          u.badges === undefined ||
+          u.reportsCount === undefined ||
+          u.verificationsCount === undefined ||
+          u.resolvedReportsCount === undefined ||
+          u.resolverIssuesResolved === undefined
+        );
+      })
+      .map(doc => doc.ref.update({
+        points: Number.isFinite(doc.data().points) ? doc.data().points : 0,
+        badges: Array.isArray(doc.data().badges) ? doc.data().badges : [],
+        reportsCount: Number.isFinite(doc.data().reportsCount) ? doc.data().reportsCount : 0,
+        verificationsCount: Number.isFinite(doc.data().verificationsCount) ? doc.data().verificationsCount : 0,
+        resolvedReportsCount: Number.isFinite(doc.data().resolvedReportsCount) ? doc.data().resolvedReportsCount : 0,
+        resolverIssuesResolved: Number.isFinite(doc.data().resolverIssuesResolved) ? doc.data().resolverIssuesResolved : 0,
+      }));
+    if (updates.length) {
+      await Promise.all(updates);
+      console.log(`✅ Backfilled gamification fields for ${updates.length} user(s).`);
     }
   } catch (error) {
     console.error('❌ Error seeding resolver account:', error);
