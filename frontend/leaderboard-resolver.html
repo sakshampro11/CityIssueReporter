@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lokally – Citizen Leaderboard</title>
+  <title>Lokally – Resolver Leaderboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,34 +11,61 @@
     body, html { font-family: 'Space Grotesk', sans-serif; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800">
+<body class="min-h-screen bg-slate-50 text-slate-800 pb-16">
+  <!-- Sticky Glassmorphic Header -->
   <nav class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100/80 px-6 sm:px-16 py-4 flex items-center justify-between shadow-sm shadow-slate-100/25">
-    <a href="landing.html" class="text-3xl font-extrabold tracking-tight text-blue-600 flex items-center gap-1.5">
-      <span>Lokally</span><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-    </a>
-    <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all">
-      <span class="material-symbols-outlined text-[18px]">arrow_back</span>Dashboard
-    </a>
+    <div class="flex items-center gap-1.5">
+      <a href="landing.html" class="text-2xl font-extrabold text-blue-600 font-space-grotesk hover:opacity-95 transition flex items-center gap-1.5">
+        Lokally
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+      </a>
+      <span class="bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ml-2">Resolver Portal</span>
+    </div>
+
+    <!-- Center Navigation Tabs -->
+    <div class="hidden sm:flex items-center gap-2 text-slate-600">
+      <a href="resolver-dashboard.html"
+        class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 px-3.5 py-2.5 rounded-xl hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-100/50"
+        title="Resolver dashboard">
+        <span class="material-symbols-outlined text-[18px]">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="leaderboard-resolver.html"
+        class="flex items-center gap-1.5 text-xs font-bold text-blue-600 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100/70 transition-all duration-200"
+        title="Resolver leaderboard">
+        <span class="material-symbols-outlined text-[18px]">military_tech</span>
+        <span>Leaderboard</span>
+      </a>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <span class="text-sm font-semibold text-slate-700 hidden sm:inline" id="resolverName">Resolver</span>
+      <button onclick="handleLogout()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        Log Out
+      </button>
+    </div>
   </nav>
 
-  <main class="max-w-4xl mx-auto px-6 sm:px-16 py-12">
+  <main class="max-w-4xl mx-auto px-6 py-12">
     <div class="mb-8">
       <div class="flex items-center gap-3">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Citizen Leaderboard</h1>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Resolver Leaderboard</h1>
         <button id="leaderboardInfoBtn" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50 transition-all" aria-label="Leaderboard info">
           <span class="material-symbols-outlined text-[18px]">info</span>
         </button>
       </div>
-      <p class="text-slate-500 font-medium mt-2">Top community contributors by participation points. Resolver accounts are excluded.</p>
+      <p class="text-slate-500 font-medium mt-2">Internal rank of Lokally resolution teams by verified issues resolved.</p>
     </div>
 
-    <div id="loadingState" class="text-center text-slate-400 py-12 font-semibold">Loading leaderboard...</div>
-    <div id="emptyState" class="hidden text-center text-slate-400 py-12 font-semibold">No citizen activity yet.</div>
-    <div id="errorState" class="hidden text-center text-rose-600 py-12 font-semibold">Unable to load leaderboard.</div>
+    <div id="loadingState" class="text-center text-slate-400 py-12 font-semibold">Loading resolver leaderboard...</div>
+    <div id="emptyState" class="hidden text-center text-slate-400 py-12 font-semibold">No resolver activity yet.</div>
+    <div id="errorState" class="hidden text-center text-rose-600 py-12 font-semibold">Unable to load resolver leaderboard.</div>
 
     <div id="leaderboardList" class="space-y-3"></div>
   </main>
 
+  <!-- Info Modal -->
   <div id="infoModal" class="hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300 opacity-0">
     <div id="infoModalContainer" class="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-xl w-full p-6 sm:p-8 relative transform scale-95 transition-all duration-300 opacity-0">
       <button id="closeInfoModal" class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 w-8 h-8 rounded-full flex items-center justify-center transition-all" aria-label="Close modal">
@@ -48,67 +75,53 @@
       <!-- Header -->
       <div class="flex items-center gap-3.5 mb-6 pb-4 border-b border-slate-100">
         <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner shadow-blue-100/50">
-          <span class="material-symbols-outlined text-[22px]">military_tech</span>
+          <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
         </div>
         <div>
-          <h2 class="text-xl font-extrabold text-slate-950 font-space-grotesk tracking-tight">How Points & Badges Work</h2>
-          <p class="text-xs text-slate-400 font-semibold mt-0.5">Engage with Lokally to level up your profile</p>
+          <h2 class="text-xl font-extrabold text-slate-955 font-space-grotesk tracking-tight">Resolver Ranks & Badges</h2>
+          <p class="text-xs text-slate-400 font-semibold mt-0.5">Performance tracking for Lokally departments</p>
         </div>
       </div>
       
       <div class="space-y-6">
-        <!-- Points System Section -->
+        <!-- How Rankings Work Section -->
         <div>
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[16px] text-slate-400">stars</span> Points System
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-slate-400">trending_up</span> How Rankings Work
           </h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="bg-blue-50/40 hover:bg-blue-50/70 border border-blue-100/50 rounded-2xl p-3.5 transition-all duration-200">
-              <span class="block text-2xl font-black text-blue-600 font-space-grotesk">+5</span>
-              <span class="block text-xs font-bold text-slate-800 mt-1">New Report</span>
-              <p class="text-[11px] text-slate-500 font-medium mt-1 leading-normal">Submit a verified local community issue.</p>
-            </div>
-            <div class="bg-teal-50/40 hover:bg-teal-50/70 border border-teal-100/50 rounded-2xl p-3.5 transition-all duration-200">
-              <span class="block text-2xl font-black text-teal-600 font-space-grotesk">+2</span>
-              <span class="block text-xs font-bold text-slate-800 mt-1">Verification</span>
-              <p class="text-[11px] text-slate-500 font-medium mt-1 leading-normal">Upvote or verify an existing issue.</p>
-            </div>
-            <div class="bg-emerald-50/40 hover:bg-emerald-50/70 border border-emerald-100/50 rounded-2xl p-3.5 transition-all duration-200">
-              <span class="block text-2xl font-black text-emerald-600 font-space-grotesk">+10</span>
-              <span class="block text-xs font-bold text-slate-800 mt-1">Issue Resolved</span>
-              <p class="text-[11px] text-slate-500 font-medium mt-1 leading-normal">Eagerly earned when your issue is resolved.</p>
-            </div>
+          <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-medium text-slate-600 leading-relaxed">
+            Rankings are determined solely by the number of community concerns resolved. Resolvers must submit solid verification details and resolution proof (photos or videos) to complete an issue and increment their score.
           </div>
         </div>
 
         <!-- Badges Section -->
         <div>
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[16px] text-slate-400">workspace_premium</span> Earning Badges
+            <span class="material-symbols-outlined text-[16px] text-slate-400">workspace_premium</span> Resolver Badges
           </h3>
           <div class="space-y-2.5">
             <div class="flex items-center gap-4 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100 rounded-2xl p-3.5 transition-all duration-200">
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-blue-50 text-blue-700 border-blue-100 shrink-0">
-                <span class="material-symbols-outlined text-[13px]">flag</span>First Report
+                <span class="material-symbols-outlined text-[13px]">handshake</span>5 Issues Resolved
               </span>
               <div class="text-[11px] text-slate-500 font-medium leading-normal">
-                Awarded for submitting your very first issue on Lokally.
+                Awarded automatically upon successfully resolving 5 distinct community issues.
               </div>
             </div>
             <div class="flex items-center gap-4 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100 rounded-2xl p-3.5 transition-all duration-200">
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-amber-50 text-amber-700 border-amber-100 shrink-0">
-                <span class="material-symbols-outlined text-[13px]">visibility</span>Community Watcher
+                <span class="material-symbols-outlined text-[13px]">award_star</span>10 Issues Resolved
               </span>
               <div class="text-[11px] text-slate-500 font-medium leading-normal">
-                Earned after verifying or supporting 5 community reports.
+                Earned after reaching 10 resolved issues, indicating stellar community effort.
               </div>
             </div>
             <div class="flex items-center gap-4 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100 rounded-2xl p-3.5 transition-all duration-200">
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-100 shrink-0">
-                <span class="material-symbols-outlined text-[13px]">construction</span>Problem Solver
+                <span class="material-symbols-outlined text-[13px]">trophy</span>25 Issues Resolved
               </span>
               <div class="text-[11px] text-slate-500 font-medium leading-normal">
-                Awarded when 1 of your reported issues has been resolved.
+                A prestigious badge reserved for teams with 25 or more community issue resolutions.
               </div>
             </div>
           </div>
@@ -118,10 +131,26 @@
   </div>
 
   <script>
-    const BADGE_META = {
-      'First Report': { icon: 'flag', className: 'bg-blue-50 text-blue-700 border-blue-100' },
-      'Community Watcher': { icon: 'visibility', className: 'bg-amber-50 text-amber-700 border-amber-100' },
-      'Problem Solver': { icon: 'construction', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    // Auth Guard Check
+    const token = localStorage.getItem('ch_token');
+    const user = JSON.parse(localStorage.getItem('ch_user') || '{}');
+
+    if (!token || user.role !== 'resolver') {
+      window.location.href = 'resolver-login.html';
+    } else {
+      document.getElementById('resolverName').textContent = user.name || 'Resolver';
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('ch_token');
+      localStorage.removeItem('ch_user');
+      window.location.href = 'resolver-login.html';
+    }
+
+    const RESOLVER_BADGE_META = {
+      '5 Issues Resolved': { icon: 'handshake', className: 'bg-blue-50 text-blue-700 border-blue-100' },
+      '10 Issues Resolved': { icon: 'award_star', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+      '25 Issues Resolved': { icon: 'trophy', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
     };
 
     function rankBadge(rank) {
@@ -131,12 +160,12 @@
       return 'bg-slate-50 text-slate-500 border-slate-200/60';
     }
 
-    function renderLeader(user, index) {
+    function renderLeader(leader, index) {
       const rank = index + 1;
-      const badges = Array.isArray(user.badges) ? user.badges : [];
+      const badges = Array.isArray(leader.badges) ? leader.badges : [];
       const badgesHtml = badges.length
         ? badges.map((badge) => {
-            const meta = BADGE_META[badge] || { icon: 'workspace_premium', className: 'bg-slate-50 text-slate-700 border-slate-100' };
+            const meta = RESOLVER_BADGE_META[badge] || { icon: 'workspace_premium', className: 'bg-slate-50 text-slate-700 border-slate-100' };
             return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.className}">
               <span class="material-symbols-outlined text-[12px]">${meta.icon}</span>${badge}
             </span>`;
@@ -148,9 +177,9 @@
           <div class="w-10 h-10 rounded-xl border flex items-center justify-center font-extrabold text-sm shrink-0 ${rankBadge(rank)}">${rank}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-3 mb-2">
-              <h3 class="font-bold text-slate-900 truncate">${user.name}</h3>
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100/70 text-xs font-extrabold shadow-sm shadow-amber-100/30">
-                <span class="material-symbols-outlined text-[14px]">stars</span>${user.points} pts
+              <h3 class="font-bold text-slate-900 truncate">${leader.name}</h3>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100/70 text-xs font-extrabold shadow-sm shadow-emerald-100/30">
+                <span class="material-symbols-outlined text-[14px]">check_circle</span>${leader.issuesResolved} Resolved
               </span>
             </div>
             <div class="flex flex-wrap gap-1.5">${badgesHtml}</div>
@@ -170,8 +199,10 @@
       list.innerHTML = '';
 
       try {
-        const res = await fetch('/api/leaderboard');
-        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        const res = await fetch('/api/resolver/leaderboard', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch resolver leaderboard');
         const data = await res.json();
         const leaders = data.leaders || [];
         loading.classList.add('hidden');
